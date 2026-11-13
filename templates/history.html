@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block title %}Activity History{% endblock %}
+{% block page_icon %}📋{% endblock %}
+{% block page_title %}Activity History & Analytics{% endblock %}
+
+{% block content %}
+<!-- Analytics Cards -->
+<div class="grid grid-4 mb-20">
+    <div class="stat-card purple fade-in">
+        <div class="stat-info">
+            <div class="stat-value">{{ analytics.stats.total }}</div>
+            <div class="stat-label">Total Events</div>
+        </div>
+        <div class="stat-icon-wrap">🔥</div>
+    </div>
+    <div class="stat-card cyan fade-in">
+        <div class="stat-info">
+            <div class="stat-value">{{ analytics.stats.gestures }}</div>
+            <div class="stat-label">Gestures</div>
+        </div>
+        <div class="stat-icon-wrap">🖐️</div>
+    </div>
+    <div class="stat-card green fade-in">
+        <div class="stat-info">
+            <div class="stat-value">{{ analytics.stats.voice }}</div>
+            <div class="stat-label">Voice Commands</div>
+        </div>
+        <div class="stat-icon-wrap">🎤</div>
+    </div>
+    <div class="stat-card orange fade-in">
+        <div class="stat-info">
+            <div class="stat-value">{{ analytics.stats.facial }}</div>
+            <div class="stat-label">Expressions</div>
+        </div>
+        <div class="stat-icon-wrap">😊</div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="grid grid-3 mb-20">
+    <div class="card fade-in">
+        <div class="card-title mb-14">🖐️ Top Gestures</div>
+        <canvas id="gestureChart" height="180"></canvas>
+    </div>
+    <div class="card fade-in">
+        <div class="card-title mb-14">🎤 Top Voice Commands</div>
+        <canvas id="voiceChart" height="180"></canvas>
+    </div>
+    <div class="card fade-in">
+        <div class="card-title mb-14">😊 Top Expressions</div>
+        <canvas id="facialChart" height="180"></canvas>
+    </div>
+</div>
+
+<div class="card fade-in mb-20">
+    <div class="card-title mb-14">📈 7-Day Activity Trend</div>
+    <canvas id="trendChart" height="100"></canvas>
+</div>
+
+<!-- Filter Bar -->
+<div class="card fade-in mb-20" style="padding:14px 20px;">
+    <div class="flex items-center gap-12" style="flex-wrap:wrap;">
+        <span class="text-sm font-bold">Filter by Type:</span>
+        {% for t, label in [('all','All'),('gesture','Gestures'),('voice','Voice'),
+        ('facial','Facial'),('system','System')] %}
+        <a href="{{ url_for('history', type=t) }}"
+            class="badge {% if current_type == t %}badge-primary{% else %}badge-neutral{% endif %}"
+            style="padding:6px 14px;font-size:0.82rem;cursor:pointer;">
+            {{ label }}
+        </a>
+        {% endfor %}
+        <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="btn btn-outline btn-sm" onclick="exportCSV()">📥 Export CSV</button>
+            <button class="btn btn-danger btn-sm" onclick="clearAllHistory()">🗑 Clear All</button>
+        </div>
+    </div>
+</div>
+
+<!-- History Table -->
+<div class="card fade-in">
+    <div class="card-title mb-16">📋 Activity Log</div>
+    {% if logs.items %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Type</th>
+                    <th>Activity</th>
+                    <th>Details</th>
+                    <th>Confidence</th>
+                    <th>Action Taken</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs.items %}
+                <tr>
+                    <td class="text-muted">{{ loop.index }}</td>
+                    <td>
+                        <span class="badge badge-{% if log.activity_type=='gesture' %}primary
+              {% elif log.activity_type=='voice' %}info
+              {% elif log.activity_type=='facial' %}success
+              {% else %}warning{% endif %}">
+                            {% if log.activity_type=='gesture' %}🖐️
+                            {% elif log.activity_type=='voice' %}🎤
+                            {% elif log.activity_type=='facial' %}😊
+                            {% else %}⚙️{% endif %}
+                            {{ log.activity_type }}
+                        </span>
+                    </td>
+                    <td class="font-bold">{{ log.activity_name }}</td>
+                    <td class="text-muted">{{ log.details or '—' }}</td>
+                    <td>
+                        {% if log.confidence %}
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <div class="progress-bar-wrap" style="width:60px;">
+                                <div class="progress-bar" style="width:{{ log.confidence|int }}%;"></div>
+                            </div>
+                            <span class="text-xs text-muted">{{ log.confidence|round(1) }}%</span>
+                        </div>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="text-muted">{{ log.action_taken or '—' }}</td>
+                    <td class="text-xs text-muted">{{ log.timestamp.strftime('%m/%d %H:%M:%S') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        {% if logs.has_prev %}
+        <a href="{{ url_for('history', page=logs.prev_num, type=current_type) }}">← Prev</a>
+        {% endif %}
+        {% for p in logs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+        <{% if p==logs.page %}span class="current" {% else %}a
+            href="{{ url_for('history', page=p, type=current_type) }}" {% endif %}>
+            {{ p }}
+        </{% if p==logs.page %}span{% else %}a{% endif %}>
+        {% else %}
+        <span>…</span>
+        {% endif %}
+        {% endfor %}
+        {% if logs.has_next %}
+        <a href="{{ url_for('history', page=logs.next_num, type=current_type) }}">Next →</a>
+        {% endif %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:60px 0;">
+        <div style="font-size:3rem;margin-bottom:12px;">📋</div>
+        <p class="text-secondary">No activity records yet.</p>
+        <p class="text-muted text-sm">Start using gesture, voice, or facial modules to generate data.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const analytics = {{ analytics | tojson }};
+
+    function makeBarChart(canvasId, labels, values, color) {
+        if (!document.getElementById(canvasId)) return;
+        new Chart(document.getElementById(canvasId).getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: color + '80',
+                    borderColor: color,
+                    borderWidth: 2,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        ticks: { color: '#94a3b8', font: { size: 11 } },
+                        grid: { color: 'rgba(255,255,255,0.04)' }
+                    },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+                }
+            }
+        });
+    }
+
+    makeBarChart('gestureChart',
+        analytics.top_gestures.map(d => d.name),
+        analytics.top_gestures.map(d => d.count),
+        '#6366f1');
+
+    makeBarChart('voiceChart',
+        analytics.top_voice.map(d => d.name),
+        analytics.top_voice.map(d => d.count),
+        '#06b6d4');
+
+    makeBarChart('facialChart',
+        analytics.top_facial.map(d => d.name),
+        analytics.top_facial.map(d => d.count),
+        '#10b981');
+
+    // Trend line chart
+    new Chart(document.getElementById('trendChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: analytics.daily_activity.map(d => d.date.slice(5)),
+            datasets: [{
+                label: 'Daily Interactions',
+                data: analytics.daily_activity.map(d => d.count),
+                fill: true,
+                backgroundColor: 'rgba(99,102,241,0.1)',
+                borderColor: '#6366f1',
+                borderWidth: 2,
+                tension: 0.4,
+                pointBackgroundColor: '#6366f1',
+                pointRadius: 5,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#94a3b8' } } },
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+            }
+        }
+    });
+
+    function exportCSV() {
+        const rows = [['Type', 'Activity', 'Details', 'Confidence', 'Action', 'Timestamp']];
+        document.querySelectorAll('.data-table tbody tr').forEach(tr => {
+            const cells = Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim());
+            if (cells.length) rows.push(cells.slice(1));
+        });
+        const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `ai_activity_${Date.now()}.csv`;
+        a.click();
+    }
+
+    async function clearAllHistory() {
+        if (!confirm('Clear all activity history? This cannot be undone.')) return;
+        await fetch('/api/history/clear', { method: 'POST' });
+        location.reload();
+    }
+</script>
+{% endblock %}

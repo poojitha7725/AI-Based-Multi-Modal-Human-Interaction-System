@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}About Project{% endblock %}
+{% block page_icon %}ℹ️{% endblock %}
+{% block page_title %}About This Project{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="hero-banner fade-in mb-20">
+    <div style="font-size:3rem;margin-bottom:12px;">🤖</div>
+    <h2>AI-Based Multi-Modal Human Interaction System</h2>
+    <p>A B.Tech Data Science Major Project combining Computer Vision, Speech Recognition, and AI</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px;">
+        <span class="badge badge-primary" style="padding:6px 14px;">Python / Flask</span>
+        <span class="badge badge-info" style="padding:6px 14px;">OpenCV</span>
+        <span class="badge badge-success" style="padding:6px 14px;">MediaPipe</span>
+        <span class="badge badge-warning" style="padding:6px 14px;">DeepFace</span>
+        <span class="badge badge-neutral" style="padding:6px 14px;">SQLite</span>
+        <span class="badge badge-primary" style="padding:6px 14px;">SocketIO</span>
+    </div>
+</div>
+
+<!-- Modules Grid -->
+<div class="grid grid-3 mb-20">
+    {% set modules = [
+    ('1','User Authentication','👤','Secure login/register, user profiles, personalized settings stored in SQLite.'),
+    ('2','Hand Gesture Recognition','🖐️','Real-time gesture detection via MediaPipe. Supports 6 gesture types mapped to
+    system actions.'),
+    ('3','Voice Command Recognition','🎤','Google Speech Recognition + pyttsx3 TTS. 12+ supported commands with safe
+    execution.'),
+    ('4','Facial Expression Detection','😊','DeepFace + OpenCV cascade. Detects 7 expressions with confidence scores.'),
+    ('5','Virtual Mouse Control','🖱️','Index finger cursor control, pinch-click, double-click, right-click, scroll via
+    hand gestures.'),
+    ('6','Smart Application Control','⚙️','Whitelist-based safe app launcher for 20+ apps, browser control, media
+    keys.'),
+    ('7','Presentation Control','📊','PowerPoint control via gesture-mapped keyboard shortcuts: next, prev, start, end,
+    blank.'),
+    ('8','Real-Time Dashboard','📊','Live camera feeds, module status cards, SocketIO status updates, activity
+    charts.'),
+    ('9','User Settings','🎨','Per-user sensitivity, language, theme, module enable/disable — all persisted to DB.'),
+    ('10','Multi-Modal Interaction','🔀','Interaction manager combines gesture + voice + facial inputs, resolves
+    conflicts, prioritises commands.'),
+    ('11','Activity Analytics','📈','Complete event log with 4 Chart.js analytics charts, filters, pagination, CSV
+    export.'),
+    ('12','Modern UI/UX','✨','Premium dark theme, glassmorphism cards, gradient text, smooth animations, SocketIO live
+    updates.')
+    ] %}
+    {% for num, title, icon, desc in modules %}
+    <div class="module-card fade-in">
+        <div class="module-number">Module {{ num }}</div>
+        <div class="module-title">{{ icon }} {{ title }}</div>
+        <div class="module-desc">{{ desc }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Tech Stack Details -->
+<div class="card fade-in mb-20">
+    <div class="card-title mb-16">🛠️ Technology Stack</div>
+    <div class="grid grid-3">
+        {% for category, items in [
+        ('Frontend', ['HTML5 / CSS3', 'Vanilla JavaScript', 'Chart.js 4', 'Socket.io Client', 'Google Fonts (Inter)']),
+        ('Backend', ['Python 3.9+', 'Flask 2.3', 'Flask-Login', 'Flask-SocketIO', 'Flask-SQLAlchemy']),
+        ('AI / ML', ['OpenCV 4.8', 'MediaPipe 0.10', 'DeepFace', 'SpeechRecognition', 'pyttsx3 TTS', 'PyAutoGUI']),
+        ('Database', ['SQLite 3', 'SQLAlchemy ORM', 'User model', 'Settings model', 'Activity log model']),
+        ('System', ['PyAudio (mic input)', 'Webbrowser', 'Subprocess (whitelist)', 'Pillow (screenshot)', 'Threading']),
+        ('DevOps', ['Virtual Environment', 'pip requirements.txt', 'Windows 11 compatible', 'VS Code friendly'])
+        ] %}
+        <div style="padding:16px 18px;background:rgba(255,255,255,0.03);
+                border:1px solid var(--border);border-radius:10px;">
+            <div style="font-weight:700;margin-bottom:10px;">{{ category }}</div>
+            {% for item in items %}
+            <div class="text-sm text-secondary" style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                → {{ item }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- How it works -->
+<div class="card fade-in mb-20">
+    <div class="card-title mb-16">🔀 Multi-Modal Interaction Flow</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;">
+        {% for label in ['Webcam / Mic Input','OpenCV + MediaPipe','Feature Extraction',
+        'Gesture / Voice / Facial Classification','Interaction Manager',
+        'System Action Execution','Activity Logged to DB'] %}
+        <div style="padding:10px 16px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);
+                border-radius:8px;font-size:0.82rem;font-weight:600;white-space:nowrap;">
+            {{ label }}
+        </div>
+        {% if not loop.last %}<span style="color:var(--accent);font-size:1.2rem;">→</span>{% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Project Info -->
+<div class="grid grid-2">
+    <div class="card fade-in">
+        <div class="card-title mb-14">📁 Project Structure</div>
+        <pre style="font-size:0.78rem;color:var(--text-secondary);line-height:1.7;
+                overflow-x:auto;padding:12px;background:rgba(0,0,0,0.3);border-radius:8px;">
+project/
+├── app.py              ← Main Flask app & all routes
+├── config.py           ← Configuration constants
+├── requirements.txt    ← pip dependencies
+├── database.db         ← SQLite (auto-created)
+├── database/
+│   └── database.py     ← SQLAlchemy models
+├── modules/
+│   ├── hand_gesture.py
+│   ├── voice_recognition.py
+│   ├── facial_expression.py
+│   ├── virtual_mouse.py
+│   ├── application_control.py
+│   ├── presentation_control.py
+│   └── interaction_manager.py
+├── templates/          ← 11 Jinja2 HTML pages
+└── static/
+    ├── css/style.css   ← Premium dark theme
+    └── js/             ← Frontend scripts
+    </pre>
+    </div>
+    <div class="card fade-in">
+        <div class="card-title mb-14">🚀 Quick Start Guide</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            {% for step, cmd in [
+            ('Create virtual env', 'python -m venv venv'),
+            ('Activate (Windows)', '.\\venv\\Scripts\\activate'),
+            ('Install dependencies', 'pip install -r requirements.txt'),
+            ('Run the app', 'python app.py'),
+            ('Open in browser', 'http://localhost:5000'),
+            ] %}
+            <div style="padding:10px 14px;background:rgba(0,0,0,0.3);border-radius:8px;">
+                <div class="text-xs text-muted mb-4">Step {{ loop.index }}: {{ step }}</div>
+                <code style="color:var(--accent-green);font-size:0.85rem;">{{ cmd }}</code>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

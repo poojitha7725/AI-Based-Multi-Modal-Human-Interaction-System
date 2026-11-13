@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}System Check{% endblock %}
+{% block page_icon %}🔍{% endblock %}
+{% block page_title %}System Diagnostics{% endblock %}
+
+{% block content %}
+<style>
+    .check-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 14px 18px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        margin-bottom: 10px;
+        transition: background 0.2s;
+    }
+
+    .check-row:hover {
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    .check-icon {
+        font-size: 1.4rem;
+        min-width: 32px;
+        text-align: center;
+        margin-top: 2px;
+    }
+
+    .check-info {
+        flex: 1;
+    }
+
+    .check-name {
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+    }
+
+    .check-detail {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        word-break: break-word;
+    }
+
+    .check-fix {
+        font-size: 0.78rem;
+        color: #fcd34d;
+        margin-top: 4px;
+    }
+
+    .check-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        white-space: nowrap;
+        min-width: 80px;
+        text-align: center;
+    }
+
+    .badge-ok {
+        background: rgba(16, 185, 129, 0.2);
+        color: #6ee7b7;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .badge-fail {
+        background: rgba(239, 68, 68, 0.2);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .badge-warn {
+        background: rgba(245, 158, 11, 0.2);
+        color: #fcd34d;
+        border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .badge-checking {
+        background: rgba(99, 102, 241, 0.2);
+        color: #a5b4fc;
+        border: 1px solid rgba(99, 102, 241, 0.4);
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .summary-card {
+        text-align: center;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+    }
+
+    .summary-num {
+        font-size: 2.5rem;
+        font-weight: 800;
+    }
+
+    .summary-label {
+        font-size: 0.82rem;
+    }
+</style>
+
+<!-- Summary Row -->
+<div class="summary-grid" id="summary-row" style="display:none;">
+    <div class="summary-card" style="background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.3);">
+        <div class="summary-num" id="sum-ok" style="color:#10b981;">—</div>
+        <div class="summary-label" style="color:#6ee7b7;">✅ Passed</div>
+    </div>
+    <div class="summary-card" style="background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.3);">
+        <div class="summary-num" id="sum-warn" style="color:#f59e0b;">—</div>
+        <div class="summary-label" style="color:#fcd34d;">⚠️ Warnings</div>
+    </div>
+    <div class="summary-card" style="background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.3);">
+        <div class="summary-num" id="sum-fail" style="color:#ef4444;">—</div>
+        <div class="summary-label" style="color:#fca5a5;">❌ Failed</div>
+    </div>
+</div>
+
+<!-- Run Check Card -->
+<div class="card fade-in mb-20" id="start-card">
+    <div style="text-align:center;padding:20px 0;">
+        <div style="font-size:3rem;margin-bottom:12px;">🔬</div>
+        <div style="font-size:1.1rem;font-weight:600;margin-bottom:8px;">System Diagnostics</div>
+        <div class="text-secondary text-sm mb-20">This will test all Python libraries, camera, microphone, AI models,
+            and database in real time.</div>
+        <button class="btn btn-primary" id="run-btn" onclick="runCheck()" style="padding:12px 32px;font-size:1rem;">
+            🔍 Run System Check
+        </button>
+        <div id="checking-msg" style="display:none;margin-top:16px;color:#a5b4fc;">
+            ⏳ Running checks... Please wait (may take 5–10 seconds for camera test)
+        </div>
+    </div>
+</div>
+
+<!-- Results -->
+<div class="card fade-in" id="results-card" style="display:none;">
+    <div class="card-header">
+        <div class="card-title">📋 Check Results</div>
+        <button class="btn btn-outline btn-sm" onclick="runCheck()">↻ Re-run</button>
+    </div>
+    <div id="results-list" style="margin-top:12px;"></div>
+</div>
+
+<!-- Info Box -->
+<div class="card fade-in" style="margin-top:20px;background:rgba(6,182,212,0.05);border-color:rgba(6,182,212,0.2);">
+    <div class="card-title mb-12">💡 What each check means</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.85rem;">
+        <div><span style="color:#6ee7b7;">✅ OK</span> — This component is working correctly. No action needed.</div>
+        <div><span style="color:#fcd34d;">⚠️ Warning</span> — Working but may have issues. Read the detail for info.
+        </div>
+        <div><span style="color:#fca5a5;">❌ Failed</span> — This component is not working. Follow the fix instructions.
+        </div>
+        <div><span style="color:#a5b4fc;">ℹ️ Info</span> — Informational only. Check if the information looks correct.
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function runCheck() {
+        document.getElementById('checking-msg').style.display = 'block';
+        document.getElementById('run-btn').disabled = true;
+        document.getElementById('run-btn').textContent = '⏳ Checking...';
+        document.getElementById('results-card').style.display = 'none';
+        document.getElementById('summary-row').style.display = 'none';
+
+        try {
+            const res = await fetch('/api/system/check');
+            const data = await res.json();
+
+            // Summary
+            document.getElementById('sum-ok').textContent = data.summary.ok;
+            document.getElementById('sum-warn').textContent = data.summary.warn;
+            document.getElementById('sum-fail').textContent = data.summary.fail;
+            document.getElementById('summary-row').style.display = 'grid';
+
+            // Results list
+            const list = document.getElementById('results-list');
+            list.innerHTML = data.results.map(r => {
+                const icons = { ok: '✅', fail: '❌', warn: '⚠️' };
+                const badges = { ok: 'badge-ok', fail: 'badge-fail', warn: 'badge-warn' };
+                const labels = { ok: '✅ PASSED', fail: '❌ FAILED', warn: '⚠️ WARNING' };
+                const icon = icons[r.status] || 'ℹ️';
+                const badge = badges[r.status] || 'badge-checking';
+                const label = labels[r.status] || r.status.toUpperCase();
+
+                return `<div class="check-row">
+        <div class="check-icon">${icon}</div>
+        <div class="check-info">
+          <div class="check-name">${r.name}</div>
+          <div class="check-detail">${r.detail || ''}</div>
+          ${r.fix ? `<div class="check-fix">🔧 Fix: ${r.fix}</div>` : ''}
+        </div>
+        <div class="check-badge ${badge}">${label}</div>
+      </div>`;
+            }).join('');
+
+            document.getElementById('results-card').style.display = 'block';
+        } catch (err) {
+            document.getElementById('results-list').innerHTML =
+                `<div class="check-row"><div class="check-info"><div class="check-name" style="color:#fca5a5;">Error running check</div><div class="check-detail">${err.message}</div></div></div>`;
+            document.getElementById('results-card').style.display = 'block';
+        }
+
+        document.getElementById('checking-msg').style.display = 'none';
+        document.getElementById('run-btn').disabled = false;
+        document.getElementById('run-btn').textContent = '🔍 Run System Check';
+    }
+
+    // Auto-run on page load
+    runCheck();
+</script>
+{% endblock %}

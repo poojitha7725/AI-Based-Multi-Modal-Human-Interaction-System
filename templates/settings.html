@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block page_icon %}⚙️{% endblock %}
+{% block page_title %}User Settings{% endblock %}
+
+{% block content %}
+<form method="POST" action="{{ url_for('settings_page') }}" id="settings-form">
+    <div class="grid grid-2 mb-20">
+
+        <!-- Module Toggles -->
+        <div class="card fade-in">
+            <div class="card-title mb-16">🤖 AI Modules</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+                {% for module, label, icon in [
+                ('gesture_module','Hand Gesture Recognition','🖐️'),
+                ('voice_module','Voice Assistant','🎤'),
+                ('facial_module','Facial Expression Detection','😊'),
+                ('virtual_mouse_module','Virtual Mouse Control','🖱️'),
+                ] %}
+                <div class="flex items-center justify-between" style="padding:10px 14px;
+           background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;">
+                    <span class="text-sm" style="display:flex;align-items:center;gap:8px;">
+                        {{ icon }} {{ label }}
+                    </span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="{{ module }}" id="{{ module }}" {% if settings[module] %}checked{%
+                            endif %} />
+                        <div class="toggle-track"></div>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Preferences -->
+        <div class="card fade-in">
+            <div class="card-title mb-16">🎨 Preferences</div>
+            <div class="form-group">
+                <label class="form-label">🌐 Voice Language</label>
+                <select name="voice_language" class="form-control">
+                    <option value="en-US" {% if settings.voice_language=='en-US' %}selected{% endif %}>English (US)
+                    </option>
+                    <option value="en-IN" {% if settings.voice_language=='en-IN' %}selected{% endif %}>English (India)
+                    </option>
+                    <option value="hi-IN" {% if settings.voice_language=='hi-IN' %}selected{% endif %}>Hindi</option>
+                    <option value="te-IN" {% if settings.voice_language=='te-IN' %}selected{% endif %}>Telugu</option>
+                    <option value="fr-FR" {% if settings.voice_language=='fr-FR' %}selected{% endif %}>French</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🎭 Default Interaction Mode</label>
+                <select name="default_mode" class="form-control">
+                    <option value="multimodal" {% if settings.default_mode=='multimodal' %}selected{% endif %}>
+                        Multi-Modal (All)</option>
+                    <option value="gesture_only" {% if settings.default_mode=='gesture_only' %}selected{% endif %}>
+                        Gesture Only</option>
+                    <option value="voice_only" {% if settings.default_mode=='voice_only' %}selected{% endif %}>Voice
+                        Only</option>
+                    <option value="facial_only" {% if settings.default_mode=='facial_only' %}selected{% endif %}>Facial
+                        Only</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🎨 UI Theme</label>
+                <select name="theme" class="form-control">
+                    <option value="dark" {% if settings.theme=='dark' %}selected{% endif %}>Dark (Default)</option>
+                    <option value="darker" {% if settings.theme=='darker' %}selected{% endif %}>Extra Dark</option>
+                    <option value="dark-blue" {% if settings.theme=='dark-blue' %}selected{% endif %}>Dark Blue</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Hardware -->
+        <div class="card fade-in">
+            <div class="card-title mb-16">🔧 Hardware Controls</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+                {% for key, label, icon in [
+                ('camera_enabled','Camera','📷'),
+                ('microphone_enabled','Microphone','🎤'),
+                ('voice_feedback','Voice Feedback (TTS)','🔊'),
+                ] %}
+                <div class="flex items-center justify-between" style="padding:10px 14px;
+           background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;">
+                    <span class="text-sm" style="display:flex;align-items:center;gap:8px;">
+                        {{ icon }} {{ label }}
+                    </span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="{{ key }}" id="{{ key }}" {% if settings[key] %}checked{% endif
+                            %} />
+                        <div class="toggle-track"></div>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Sensitivity -->
+        <div class="card fade-in">
+            <div class="card-title mb-16">🎯 Detection Sensitivity</div>
+            <div class="form-group">
+                <div class="flex items-center justify-between mb-8">
+                    <label class="form-label" style="margin:0;">Gesture Sensitivity</label>
+                    <span class="badge badge-primary" id="sens-label">{{ settings.gesture_sensitivity }}</span>
+                </div>
+                <input type="range" name="gesture_sensitivity" min="0.3" max="0.95" step="0.05"
+                    value="{{ settings.gesture_sensitivity }}"
+                    oninput="document.getElementById('sens-label').textContent=parseFloat(this.value).toFixed(2)" />
+                <div class="flex items-center justify-between mt-8">
+                    <span class="text-xs text-muted">Less Sensitive (0.3)</span>
+                    <span class="text-xs text-muted">More Sensitive (0.95)</span>
+                </div>
+            </div>
+            <div style="margin-top:20px;padding:14px;background:rgba(99,102,241,0.07);
+                border:1px solid var(--border);border-radius:10px;">
+                <p class="text-xs text-muted">
+                    <strong>Lower values</strong> make detection more responsive but may have false positives.<br />
+                    <strong>Higher values</strong> require clearer gestures but are more accurate.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline">← Back to Dashboard</a>
+        <button type="submit" class="btn btn-primary btn-lg" id="save-btn">
+            💾 Save Settings
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('settings-form').addEventListener('submit', function () {
+        const btn = document.getElementById('save-btn');
+        btn.textContent = '⏳ Saving...'; btn.disabled = true;
+    });
+</script>
+{% endblock %}

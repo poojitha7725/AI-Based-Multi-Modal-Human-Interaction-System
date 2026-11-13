@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+{% block title %}Hand Gesture Control{% endblock %}
+{% block page_icon %}🖐️{% endblock %}
+{% block page_title %}Hand Gesture Recognition{% endblock %}
+
+{% block content %}
+<div class="grid grid-1-2 mb-20">
+    <!-- Left column: controls + live stats -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <!-- Controls -->
+        <div class="card fade-in">
+            <div class="card-title mb-16">🎛️ Controls</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button class="btn btn-success" id="start-btn" onclick="startGesture()">▶ Start Detection</button>
+                <button class="btn btn-danger" id="stop-btn" onclick="stopGesture()" disabled>⏹ Stop Detection</button>
+                <button class="btn btn-outline" onclick="resetGesture()">↺ Reset</button>
+            </div>
+            <div class="separator"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <span class="text-sm">Module Status</span>
+                <div class="status-pill status-inactive" id="gesture-status-pill">
+                    <span class="dot"></span> Inactive
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span class="text-sm">Detection Sensitivity</span>
+                <span class="badge badge-primary" id="sens-label">{{ settings.gesture_sensitivity }}</span>
+            </div>
+            <input type="range" min="0.3" max="0.95" step="0.05" value="{{ settings.gesture_sensitivity }}"
+                id="sensitivity-slider" style="margin-top:10px" oninput="updateSensLabel(this.value)" />
+        </div>
+
+        <!-- Current Detection -->
+        <div class="card fade-in">
+            <div class="card-title mb-12">🔍 Current Detection</div>
+            <div class="detection-box active" id="current-gesture-box">
+                <div class="detection-label">Detected Gesture</div>
+                <div class="detection-value" id="current-gesture">Waiting...</div>
+                <div class="detection-sub" id="current-action">Start detection to begin</div>
+            </div>
+        </div>
+
+        <!-- Live Stats Dashboard -->
+        <div class="card fade-in">
+            <div class="card-title mb-12">📊 Live Tracking Stats</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+
+                <!-- Hands count -->
+                <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);
+                            border-radius:10px;padding:12px;text-align:center;">
+                    <div style="font-size:1.6rem;font-weight:700;color:#818cf8;" id="stat-hand-count">0</div>
+                    <div class="text-xs text-muted">Hands Detected</div>
+                </div>
+
+                <!-- FPS -->
+                <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);
+                            border-radius:10px;padding:12px;text-align:center;">
+                    <div style="font-size:1.6rem;font-weight:700;color:#34d399;" id="stat-fps">0</div>
+                    <div class="text-xs text-muted">FPS</div>
+                </div>
+
+                <!-- Pinch status -->
+                <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);
+                            border-radius:10px;padding:12px;text-align:center;" id="pinch-stat-box">
+                    <div style="font-size:1.1rem;font-weight:700;color:#fbbf24;" id="stat-pinch">OFF</div>
+                    <div class="text-xs text-muted">Pinch Status</div>
+                </div>
+
+                <!-- Camera status -->
+                <div style="background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);
+                            border-radius:10px;padding:12px;text-align:center;">
+                    <div style="font-size:1.1rem;font-weight:700;color:#22d3ee;" id="stat-cam">OFF</div>
+                    <div class="text-xs text-muted">Camera</div>
+                </div>
+            </div>
+
+            <!-- Hand labels -->
+            <div style="margin-top:12px;padding:10px;background:rgba(255,255,255,0.03);
+                        border-radius:8px;border:1px solid var(--border);">
+                <div class="text-xs text-muted mb-8">Hand Labels</div>
+                <div id="hand-labels-display" style="font-size:0.85rem;color:#94a3b8;">
+                    — (waiting)
+                </div>
+            </div>
+
+            <!-- Pinch distance bar -->
+            <div style="margin-top:12px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                    <span class="text-xs text-muted">Pinch Distance</span>
+                    <span class="text-xs" id="pinch-dist-label">0.000</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:6px;overflow:hidden;">
+                    <div id="pinch-dist-bar" style="height:6px;width:0%;background:#fbbf24;
+                                                    border-radius:4px;transition:width 0.1s;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Finger States -->
+        <div class="card fade-in">
+            <div class="card-title mb-12">👆 Finger States (21 Landmarks Tracked)</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;" id="finger-display">
+                {% for name, icon in [('Thumb','👍'),('Index','☝️'),('Middle','🖕'),('Ring','💍'),('Pinky','🤙')] %}
+                <div style="text-align:center;padding:8px 4px;background:rgba(255,255,255,0.04);
+                            border-radius:8px;border:1px solid var(--border);transition:all 0.2s;"
+                    id="finger-{{ loop.index0 }}">
+                    <div style="font-size:1.2rem;" id="finger-icon-{{ loop.index0 }}">{{ icon }}</div>
+                    <div class="text-xs text-muted" style="margin-top:4px;">{{ name }}</div>
+                    <div class="text-xs" id="finger-state-{{ loop.index0 }}" style="color:#64748b;margin-top:2px;">—
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div style="margin-top:10px;text-align:center;" class="text-xs text-muted">
+                All 21 MediaPipe Landmarks per hand · Blue skeleton overlay
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column: camera + gesture grid -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card fade-in">
+            <div class="card-title mb-12">📷 Live Camera Feed — Blue Skeleton Tracking</div>
+            <div class="camera-container" id="cam-container">
+                <img id="gesture-feed" style="display:none" alt="Gesture Camera" />
+                <div class="camera-overlay" id="cam-overlay">
+                    <div class="cam-icon">🖐️</div>
+                    <p>Click "Start Detection" to activate</p>
+                    <p class="text-xs text-muted" style="margin-top:8px;">
+                        Up to 4 hands · Blue skeleton · 21 landmarks per hand
+                    </p>
+                </div>
+                <div class="camera-badge" id="cam-badge" style="display:none">
+                    <span class="live-dot"></span> LIVE — GESTURE
+                </div>
+            </div>
+            <!-- Active hand indicator bar -->
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;" id="hand-indicators">
+                <!-- Filled dynamically -->
+            </div>
+        </div>
+
+        <!-- Supported Gestures -->
+        <div class="card fade-in">
+            <div class="card-title mb-12">🗂️ Supported Gestures</div>
+            <div class="gesture-grid" id="gesture-grid">
+                {% set gestures = [
+                ('Open Palm', '🖐️','Pause virtual mouse'),
+                ('Closed Fist', '✊','Stop cursor movement'),
+                ('Thumbs Up', '👍','Confirm action'),
+                ('Thumbs Down', '👎','Cancel action'),
+                ('Victory Sign', '✌️','Scroll mode'),
+                ('One Finger', '☝️','Move cursor'),
+                ('Two Fingers', '✌️','Scroll mode'),
+                ('Three Fingers','🤟','Three finger action'),
+                ('Four Fingers', '🖖','Four finger action'),
+                ('Pinch', '🤏','Left click / Drag'),
+                ('Pointing', '👉','Move cursor'),
+                ('OK Sign', '👌','Confirm action'),
+                ] %}
+                {% for name, emoji, action in gestures %}
+                <div class="gesture-card" id="gc-{{ name|replace(' ','-') }}">
+                    <div class="gesture-emoji">{{ emoji }}</div>
+                    <div class="gesture-name">{{ name }}</div>
+                    <div class="text-xs text-muted" style="margin-top:4px;">{{ action }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- History -->
+<div class="card fade-in">
+    <div class="card-header">
+        <div class="card-title">📜 Gesture History</div>
+        <button class="btn btn-outline btn-sm" onclick="clearHistory()">🗑 Clear</button>
+    </div>
+    <div class="activity-feed" id="gesture-history">
+        <p class="text-secondary text-sm text-center" style="padding:20px;">
+            History will appear here as gestures are detected.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let active = false;
+    let pollInterval = null;
+    const FINGER_NAMES = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'];
+
+    function startGesture() {
+        fetch('/api/gesture/start', { method: 'POST' }).then(() => {
+            active = true;
+            document.getElementById('gesture-feed').src = '/video_feed/gesture';
+            document.getElementById('gesture-feed').style.display = 'block';
+            document.getElementById('cam-overlay').style.display = 'none';
+            document.getElementById('cam-badge').style.display = 'flex';
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('stop-btn').disabled = false;
+            setPill('gesture-status-pill', true);
+            document.getElementById('stat-cam').textContent = 'ON';
+            document.getElementById('stat-cam').style.color = '#34d399';
+            pollInterval = setInterval(pollGestureStatus, 500);
+        });
+    }
+
+    function stopGesture() {
+        fetch('/api/gesture/stop', { method: 'POST' }).then(() => {
+            active = false;
+            document.getElementById('gesture-feed').style.display = 'none';
+            document.getElementById('cam-overlay').style.display = 'flex';
+            document.getElementById('cam-badge').style.display = 'none';
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = true;
+            setPill('gesture-status-pill', false);
+            document.getElementById('current-gesture').textContent = 'Stopped';
+            document.getElementById('stat-cam').textContent = 'OFF';
+            document.getElementById('stat-cam').style.color = '#22d3ee';
+            if (pollInterval) clearInterval(pollInterval);
+            resetFingers();
+            document.getElementById('stat-hand-count').textContent = '0';
+            document.getElementById('stat-fps').textContent = '0';
+            document.getElementById('stat-pinch').textContent = 'OFF';
+            document.getElementById('hand-indicators').innerHTML = '';
+            document.getElementById('hand-labels-display').textContent = '— (stopped)';
+        });
+    }
+
+    function resetGesture() {
+        stopGesture();
+        document.getElementById('current-gesture').textContent = 'Waiting...';
+        document.getElementById('current-action').textContent = 'Start detection to begin';
+        document.getElementById('gesture-history').innerHTML =
+            '<p class="text-secondary text-sm text-center" style="padding:20px;">History will appear here.</p>';
+        document.querySelectorAll('.gesture-card').forEach(c => c.classList.remove('detected'));
+    }
+
+    function updateSensLabel(val) {
+        document.getElementById('sens-label').textContent = parseFloat(val).toFixed(2);
+    }
+
+    function setPill(id, active) {
+        const pill = document.getElementById(id);
+        if (!pill) return;
+        pill.className = active ? 'status-pill status-active' : 'status-pill status-inactive';
+        pill.innerHTML = `<span class="dot"></span> ${active ? 'Active' : 'Inactive'}`;
+    }
+
+    function resetFingers() {
+        for (let i = 0; i < 5; i++) {
+            const box = document.getElementById(`finger-${i}`);
+            const st = document.getElementById(`finger-state-${i}`);
+            if (box) box.style.background = 'rgba(255,255,255,0.04)';
+            if (st) { st.textContent = '—'; st.style.color = '#64748b'; }
+        }
+    }
+
+    async function pollGestureStatus() {
+        let data;
+        try {
+            const res = await fetch('/api/gesture/status');
+            data = await res.json();
+        } catch (e) { return; }
+
+        // ── Gesture label ──────────────────────────────────────────────
+        const g = data.current_gesture || '—';
+        document.getElementById('current-gesture').textContent = g;
+        const actions = {
+            'Open Palm': 'Pause virtual mouse', 'Closed Fist': 'Stop cursor movement',
+            'Thumbs Up': 'Confirm action', 'Thumbs Down': 'Cancel action',
+            'Victory Sign': 'Scroll mode', 'One Finger': 'Move cursor',
+            'Two Fingers': 'Scroll mode', 'Three Fingers': 'Three finger action',
+            'Four Fingers': 'Four finger action', 'Pinch': 'Left click / Drag',
+            'Pointing': 'Move cursor', 'OK Sign': 'Confirm action',
+        };
+        document.getElementById('current-action').textContent = actions[g] || '';
+
+        // ── Highlight gesture card ──────────────────────────────────────
+        document.querySelectorAll('.gesture-card').forEach(c => c.classList.remove('detected'));
+        const card = document.getElementById('gc-' + (g || '').replace(/ /g, '-'));
+        if (card) card.classList.add('detected');
+
+        // ── Hand count ─────────────────────────────────────────────────
+        const hc = data.hand_count || 0;
+        document.getElementById('stat-hand-count').textContent = hc;
+
+        // ── Hand labels ─────────────────────────────────────────────────
+        const labels = data.hand_labels || [];
+        const labelText = labels.length
+            ? labels.map((l, i) => `Hand ${i + 1}: ${l}`).join('  |  ')
+            : '— (no hands)';
+        document.getElementById('hand-labels-display').textContent = labelText;
+
+        // ── Hand indicator pills ────────────────────────────────────────
+        const indBox = document.getElementById('hand-indicators');
+        indBox.innerHTML = '';
+        for (let i = 0; i < hc; i++) {
+            const pill = document.createElement('span');
+            pill.className = 'badge badge-primary';
+            pill.style.cssText = 'font-size:0.75rem;padding:4px 10px;';
+            pill.textContent = `✋ Hand ${i + 1}: ${labels[i] || '?'}`;
+            indBox.appendChild(pill);
+        }
+
+        // ── FPS ────────────────────────────────────────────────────────
+        document.getElementById('stat-fps').textContent = (data.fps || 0).toFixed(1);
+
+        // ── Pinch status ────────────────────────────────────────────────
+        const pinch = data.pinch_active || false;
+        const pinchDist = data.pinch_distance || 0;
+        const pinchEl = document.getElementById('stat-pinch');
+        const pinchBox = document.getElementById('pinch-stat-box');
+        if (pinch) {
+            pinchEl.textContent = 'ACTIVE';
+            pinchEl.style.color = '#f59e0b';
+            pinchBox.style.background = 'rgba(245,158,11,0.25)';
+        } else {
+            pinchEl.textContent = 'off';
+            pinchEl.style.color = '#64748b';
+            pinchBox.style.background = 'rgba(245,158,11,0.1)';
+        }
+        document.getElementById('pinch-dist-label').textContent = pinchDist.toFixed(3);
+        const barW = Math.max(0, Math.min(100, (1 - pinchDist / 0.3) * 100));
+        document.getElementById('pinch-dist-bar').style.width = barW + '%';
+        document.getElementById('pinch-dist-bar').style.background = pinch ? '#f59e0b' : '#6366f1';
+
+        // ── Finger states ────────────────────────────────────────────────
+        const fingers = data.fingers_state || [];
+        for (let i = 0; i < 5; i++) {
+            const box = document.getElementById(`finger-${i}`);
+            const st = document.getElementById(`finger-state-${i}`);
+            const up = fingers.length > i ? fingers[i] : null;
+            if (box && up !== null) {
+                box.style.background = up
+                    ? 'rgba(99,102,241,0.2)'
+                    : 'rgba(255,255,255,0.04)';
+                box.style.borderColor = up
+                    ? 'rgba(99,102,241,0.6)'
+                    : 'var(--border)';
+            }
+            if (st && up !== null) {
+                st.textContent = up ? 'UP' : 'down';
+                st.style.color = up ? '#818cf8' : '#475569';
+            }
+        }
+
+        // ── History ──────────────────────────────────────────────────────
+        if (data.history && data.history.length > 0) renderHistory(data.history);
+
+        // ── Log to backend ───────────────────────────────────────────────
+        const skip = new Set(['None', 'No Hand Detected', 'Unknown', 'Inactive', 'No Hand']);
+        if (g && !skip.has(g)) {
+            fetch('/api/gesture/log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gesture: g })
+            });
+        }
+    }
+
+    function renderHistory(history) {
+        const feed = document.getElementById('gesture-history');
+        feed.innerHTML = [...history].reverse().map(h => `
+    <div class="activity-item">
+      <div class="activity-icon gesture">🖐️</div>
+      <div class="activity-info">
+        <div class="activity-name">${h.gesture}</div>
+        <div class="activity-detail">${getGestureAction(h.gesture)}</div>
+      </div>
+      <div class="activity-time">${h.timestamp}</div>
+    </div>`).join('');
+    }
+
+    function getGestureAction(g) {
+        const m = {
+            'Open Palm': 'Pause mouse', 'Closed Fist': 'Stop cursor', 'Thumbs Up': 'Confirm',
+            'Thumbs Down': 'Cancel', 'Victory Sign': 'Scroll', 'One Finger': 'Move cursor',
+            'Two Fingers': 'Scroll', 'Three Fingers': '3 Fingers', 'Four Fingers': '4 Fingers',
+            'Pinch': 'Click/Drag', 'Pointing': 'Move cursor', 'OK Sign': 'Confirm'
+        };
+        return m[g] || '';
+    }
+
+    function clearHistory() {
+        document.getElementById('gesture-history').innerHTML =
+            '<p class="text-secondary text-sm text-center" style="padding:20px;">History cleared.</p>';
+    }
+</script>
+{% endblock %}

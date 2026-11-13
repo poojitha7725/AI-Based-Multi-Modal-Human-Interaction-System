@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register — AI Multi-Modal Interaction System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+
+<body class="auth-page fade-in">
+    <div class="auth-bg-glow"></div>
+    <div class="auth-card" style="max-width:480px;">
+        <div class="auth-logo">
+            <div class="logo-icon">🤖</div>
+            <h1>Create Account</h1>
+        </div>
+        <p class="auth-subtitle">Join the AI Multi-Modal Interaction System</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }}"><i>⚠️</i> {{ msg }}</div>
+        {% endfor %}{% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('register') }}" id="reg-form">
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon">✏️</span>
+                    <input type="text" name="full_name" class="form-control" placeholder="Your full name"
+                        autocomplete="name" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Username *</label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon">👤</span>
+                    <input type="text" name="username" class="form-control" placeholder="Choose a username" required
+                        autocomplete="username" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email *</label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon">📧</span>
+                    <input type="email" name="email" class="form-control" placeholder="your@email.com" required
+                        autocomplete="email" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password * (min 6 chars)</label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" name="password" id="pw" class="form-control"
+                        placeholder="Create a strong password" required />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Confirm Password *</label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" name="confirm_password" id="cpw" class="form-control"
+                        placeholder="Repeat password" required />
+                </div>
+                <p id="pw-mismatch" class="text-xs" style="color:var(--accent-red);display:none;margin-top:4px">
+                    ⚠️ Passwords do not match
+                </p>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block btn-lg" id="reg-btn">
+                🎉 Create Account
+            </button>
+        </form>
+
+        <div class="separator"></div>
+        <p class="text-center text-sm text-secondary">
+            Already have an account? <a href="{{ url_for('login') }}" style="font-weight:600">Sign in →</a>
+        </p>
+    </div>
+    <script>
+        const pw = document.getElementById('pw');
+        const cpw = document.getElementById('cpw');
+        const msg = document.getElementById('pw-mismatch');
+        cpw.addEventListener('input', () => {
+            msg.style.display = pw.value !== cpw.value ? 'block' : 'none';
+        });
+        document.getElementById('reg-form').addEventListener('submit', function (e) {
+            if (pw.value !== cpw.value) { e.preventDefault(); return; }
+            const btn = document.getElementById('reg-btn');
+            btn.textContent = '⏳ Creating...'; btn.disabled = true;
+        });
+        document.querySelectorAll('.alert').forEach(el => {
+            setTimeout(() => {
+                el.style.opacity = '0'; el.style.transition = 'opacity 0.5s';
+                setTimeout(() => el.remove(), 500);
+            }, 4000);
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Application Control{% endblock %}
+{% block page_icon %}⚙️{% endblock %}
+{% block page_title %}Smart Application Control{% endblock %}
+
+{% block content %}
+<!-- Quick App Launchers -->
+<div class="card fade-in mb-20">
+    <div class="card-title mb-16">🚀 Quick Launch Applications</div>
+    <div class="app-grid">
+        {% for app_name, emoji in [
+        ('calculator','🔢'),('notepad','📝'),('file explorer','📁'),
+        ('paint','🎨'),('word pad','📄'),('settings','⚙️'),
+        ('youtube','▶️'),('google','🔍'),('gmail','📧'),
+        ('github','💻'),('wikipedia','📖'),('stackoverflow','💡')
+        ] %}
+        <div class="app-btn" onclick="openApp('{{ app_name }}')" id="appbtn-{{ loop.index }}">
+            <div class="app-icon">{{ emoji }}</div>
+            <div class="app-name">{{ app_name|title }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Three control sections -->
+<div class="grid grid-3 mb-20">
+    <!-- Browser Control -->
+    <div class="card fade-in">
+        <div class="card-title mb-14">🌐 Browser Control</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+            {% for action, label, ico in [
+            ('new_tab','New Tab','➕'),
+            ('close_tab','Close Tab','✖️'),
+            ('refresh','Refresh','🔄'),
+            ('back','Back','◀'),
+            ('forward','Forward','▶'),
+            ('zoom_in','Zoom In','🔍'),
+            ('zoom_out','Zoom Out','🔎'),
+            ('fullscreen','Fullscreen','⛶'),
+            ] %}
+            <button class="btn btn-outline btn-sm" onclick="browserControl('{{ action }}')">
+                {{ ico }} {{ label }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Media Control -->
+    <div class="card fade-in">
+        <div class="card-title mb-14">🎵 Media Control</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+            {% for action, label, ico in [
+            ('play_pause','Play / Pause','▶️'),
+            ('next_track','Next Track','⏭️'),
+            ('prev_track','Previous Track','⏮️'),
+            ('volume_up','Volume Up','🔊'),
+            ('volume_down','Volume Down','🔉'),
+            ('mute','Mute / Unmute','🔇'),
+            ] %}
+            <button class="btn btn-outline btn-sm" onclick="mediaControl('{{ action }}')">
+                {{ ico }} {{ label }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Presentation Control -->
+    <div class="card fade-in">
+        <div class="card-title mb-14">📊 Presentation Control</div>
+        <p class="text-xs text-muted mb-12">
+            Open a PowerPoint file first, then use these controls.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+            {% for action, label, ico in [
+            ('start','Start Presentation (F5)','▶'),
+            ('next','Next Slide →','⏩'),
+            ('prev','Previous Slide ←','⏪'),
+            ('blank','Blank Screen (B)','⬛'),
+            ('end','End Presentation (Esc)','⏹'),
+            ] %}
+            <button class="btn btn-outline btn-sm" onclick="presentationControl('{{ action }}')">
+                {{ ico }} {{ label }}
+            </button>
+            {% endfor %}
+        </div>
+        <div class="separator"></div>
+        <button class="btn btn-primary btn-block" onclick="screenshotNow()">
+            📸 Take Screenshot
+        </button>
+    </div>
+</div>
+
+<!-- Action Result -->
+<div class="card fade-in mb-20">
+    <div class="card-title mb-12">✅ Last Action Result</div>
+    <div id="action-result" style="padding:16px;background:rgba(255,255,255,0.03);
+       border:1px solid var(--border);border-radius:10px;min-height:60px;">
+        <p class="text-secondary text-sm">No action taken yet. Click any button above.</p>
+    </div>
+</div>
+
+<!-- History -->
+<div class="card fade-in">
+    <div class="card-header">
+        <div class="card-title">📜 Action History</div>
+        <button class="btn btn-outline btn-sm" onclick="clearHistory()">🗑 Clear</button>
+    </div>
+    <div class="activity-feed" id="app-history">
+        <p class="text-secondary text-sm text-center" style="padding:20px;">
+            Actions will appear here.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const historyItems = [];
+
+    async function openApp(appName) {
+        const res = await fetch('/api/app/open', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ app: appName })
+        });
+        const data = await res.json();
+        showResult('🚀 App Launch', data.message, data.status);
+        addHistory('system', appName, data.message, data.status);
+    }
+
+    async function browserControl(action) {
+        const res = await fetch('/api/app/browser', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action })
+        });
+        const data = await res.json();
+        showResult('🌐 Browser', data.message, data.status);
+        addHistory('system', action, data.message, data.status);
+    }
+
+    async function mediaControl(action) {
+        const res = await fetch('/api/app/media', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action })
+        });
+        const data = await res.json();
+        showResult('🎵 Media', data.message, data.status);
+        addHistory('system', action, data.message, data.status);
+    }
+
+    async function presentationControl(action) {
+        const res = await fetch(`/api/presentation/${action}`, { method: 'POST' });
+        const data = await res.json();
+        showResult('📊 Presentation', data.action, data.status);
+        addHistory('system', `Presentation: ${action}`, data.action, data.status);
+    }
+
+    async function screenshotNow() {
+        const res = await fetch('/api/app/screenshot', { method: 'POST' });
+        const data = await res.json();
+        showResult('📸 Screenshot', data.message, data.status);
+        addHistory('system', 'Screenshot', data.message, data.status);
+    }
+
+    function showResult(type, message, status) {
+        const box = document.getElementById('action-result');
+        const ok = status === 'success';
+        box.innerHTML = `
+    <div class="flex items-center gap-8 mb-8">
+      <span class="badge badge-${ok ? 'success' : 'danger'}">${ok ? '✅ Success' : '❌ Error'}</span>
+      <span class="text-sm text-muted">${type}</span>
+    </div>
+    <div class="text-sm">${message || ''}</div>`;
+    }
+
+    function addHistory(type, name, detail, status) {
+        const now = new Date().toLocaleTimeString();
+        historyItems.unshift({ type, name, detail, status, time: now });
+        if (historyItems.length > 20) historyItems.pop();
+        renderHistory();
+    }
+
+    function renderHistory() {
+        const feed = document.getElementById('app-history');
+        if (!historyItems.length) {
+            feed.innerHTML = '<p class="text-secondary text-sm text-center" style="padding:20px;">No actions yet.</p>';
+            return;
+        }
+        feed.innerHTML = historyItems.map(h => `
+    <div class="activity-item">
+      <div class="activity-icon system">⚙️</div>
+      <div class="activity-info">
+        <div class="activity-name">${h.name}</div>
+        <div class="activity-detail">${h.detail || ''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <span class="badge badge-${h.status === 'success' ? 'success' : 'danger'}">
+          ${h.status}</span>
+        <span class="activity-time">${h.time}</span>
+      </div>
+    </div>`).join('');
+    }
+
+    function clearHistory() {
+        historyItems.length = 0;
+        renderHistory();
+    }
+</script>
+{% endblock %}

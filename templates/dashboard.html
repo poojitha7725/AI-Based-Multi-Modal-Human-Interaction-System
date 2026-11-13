@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — AI Interaction System{% endblock %}
+{% block page_icon %}📊{% endblock %}
+{% block page_title %}Real-Time Interaction Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stat Cards Row -->
+<div class="grid grid-5 mb-20">
+    <div class="stat-card purple fade-in">
+        <div class="stat-info">
+            <div class="stat-value" id="dash-total">{{ stats.total }}</div>
+            <div class="stat-label">Total Interactions</div>
+        </div>
+        <div class="stat-icon-wrap">🔥</div>
+    </div>
+    <div class="stat-card cyan fade-in">
+        <div class="stat-info">
+            <div class="stat-value" id="dash-gesture">{{ stats.gestures }}</div>
+            <div class="stat-label">Gestures</div>
+        </div>
+        <div class="stat-icon-wrap">🖐️</div>
+    </div>
+    <div class="stat-card green fade-in">
+        <div class="stat-info">
+            <div class="stat-value" id="dash-voice">{{ stats.voice }}</div>
+            <div class="stat-label">Voice Commands</div>
+        </div>
+        <div class="stat-icon-wrap">🎤</div>
+    </div>
+    <div class="stat-card orange fade-in">
+        <div class="stat-info">
+            <div class="stat-value" id="dash-facial">{{ stats.facial }}</div>
+            <div class="stat-label">Expressions</div>
+        </div>
+        <div class="stat-icon-wrap">😊</div>
+    </div>
+    <div class="stat-card pink fade-in">
+        <div class="stat-info">
+            <div class="stat-value" id="dash-system">{{ stats.system }}</div>
+            <div class="stat-label">System Actions</div>
+        </div>
+        <div class="stat-icon-wrap">⚙️</div>
+    </div>
+</div>
+
+<!-- Module Status Row -->
+<div class="grid grid-4 mb-20">
+    <div class="card fade-in">
+        <div class="card-header">
+            <div class="card-title"><span class="card-icon">🖐️</span> Gesture Module</div>
+            <div class="status-pill status-inactive" id="gesture-pill">
+                <span class="dot"></span> Inactive
+            </div>
+        </div>
+        <div class="detection-box" id="gesture-box">
+            <div class="detection-label">Detected Gesture</div>
+            <div class="detection-value" id="dash-gesture-val">—</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn btn-success btn-sm" onclick="startModule('gesture')">▶ Start</button>
+            <button class="btn btn-danger btn-sm" onclick="stopModule('gesture')">⏹ Stop</button>
+        </div>
+    </div>
+
+    <div class="card fade-in">
+        <div class="card-header">
+            <div class="card-title"><span class="card-icon">🎤</span> Voice Module</div>
+            <div class="status-pill status-inactive" id="voice-pill">
+                <span class="dot"></span> Inactive
+            </div>
+        </div>
+        <div class="detection-box" id="voice-box">
+            <div class="detection-label">Last Command</div>
+            <div class="detection-value" id="dash-voice-val">—</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn btn-success btn-sm" onclick="startModule('voice')">▶ Start</button>
+            <button class="btn btn-danger btn-sm" onclick="stopModule('voice')">⏹ Stop</button>
+        </div>
+    </div>
+
+    <div class="card fade-in">
+        <div class="card-header">
+            <div class="card-title"><span class="card-icon">😊</span> Facial Module</div>
+            <div class="status-pill status-inactive" id="facial-pill">
+                <span class="dot"></span> Inactive
+            </div>
+        </div>
+        <div class="detection-box" id="facial-box">
+            <div class="detection-label">Expression</div>
+            <div class="detection-value" id="dash-facial-val">—</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn btn-success btn-sm" onclick="startModule('facial')">▶ Start</button>
+            <button class="btn btn-danger btn-sm" onclick="stopModule('facial')">⏹ Stop</button>
+        </div>
+    </div>
+
+    <div class="card fade-in">
+        <div class="card-header">
+            <div class="card-title"><span class="card-icon">🖱️</span> Virtual Mouse</div>
+            <div class="status-pill status-inactive" id="mouse-pill">
+                <span class="dot"></span> Inactive
+            </div>
+        </div>
+        <div class="detection-box" id="mouse-box">
+            <div class="detection-label">Mouse Status</div>
+            <div class="detection-value" id="dash-mouse-val">—</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn btn-success btn-sm" onclick="startModule('mouse')">▶ Enable</button>
+            <button class="btn btn-danger btn-sm" onclick="stopModule('mouse')">⏹ Disable</button>
+        </div>
+    </div>
+</div>
+
+<!-- Main area: Camera + Activity -->
+<div class="grid grid-2-1 mb-20">
+    <!-- Camera Feed -->
+    <div class="card fade-in">
+        <div class="card-header">
+            <div class="card-title">📷 Live Camera Feed</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <select id="cam-mode" class="form-control" style="width:130px;padding:6px 10px;font-size:0.82rem;"
+                    onchange="changeCamMode(this.value)">
+                    <option value="gesture">Gesture</option>
+                    <option value="facial">Facial</option>
+                    <option value="mouse">Virtual Mouse</option>
+                    <option value="raw">Raw Feed</option>
+                </select>
+            </div>
+        </div>
+        <div class="camera-container" id="cam-container">
+            <img id="cam-feed" src="/video_feed/gesture" alt="Camera Feed" style="display:none" />
+            <div class="camera-overlay" id="cam-overlay">
+                <div class="cam-icon">📷</div>
+                <p>Click "Start" on a module above to activate the camera</p>
+            </div>
+            <div class="camera-badge" id="cam-badge" style="display:none">
+                <span class="live-dot"></span> LIVE
+            </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn btn-primary btn-sm" id="cam-toggle-btn" onclick="toggleCamera()">📷 Activate
+                Camera</button>
+            <button class="btn btn-outline btn-sm" onclick="takeScreenshot()">📸 Screenshot</button>
+        </div>
+    </div>
+
+    <!-- Activity Feed -->
+    <div class="card fade-in">
+        <div class="card-header">
+            <div class="card-title">⚡ Recent Activity</div>
+            <button class="btn btn-outline btn-sm" onclick="refreshActivity()">↻ Refresh</button>
+        </div>
+        <div class="activity-feed" id="activity-feed">
+            {% if recent_activities %}
+            {% for act in recent_activities %}
+            <div class="activity-item">
+                <div class="activity-icon {{ act.type }}">
+                    {% if act.type == 'gesture' %}🖐️
+                    {% elif act.type == 'voice' %}🎤
+                    {% elif act.type == 'facial' %}😊
+                    {% else %}⚙️{% endif %}
+                </div>
+                <div class="activity-info">
+                    <div class="activity-name">{{ act.name }}</div>
+                    <div class="activity-detail">{{ act.details or '' }}</div>
+                </div>
+                <div class="activity-time">{{ act.timestamp.split(' ')[1] if ' ' in act.timestamp else act.timestamp }}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p class="text-secondary text-sm text-center" style="padding:30px 0;">
+                No activity yet. Start a module to begin!
+            </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid grid-2">
+    <div class="card fade-in">
+        <div class="card-title mb-16">📈 7-Day Activity</div>
+        <canvas id="dailyChart" height="140"></canvas>
+    </div>
+    <div class="card fade-in">
+        <div class="card-title mb-16">🥧 Interaction Breakdown</div>
+        <canvas id="typeChart" height="140"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const stats = {{ stats | tojson }};
+    let cameraActive = false;
+
+    // ── Chart Setup ──────────────────────────────────────────────
+    async function loadCharts() {
+        const res = await fetch('/api/analytics');
+        const data = await res.json();
+
+        // Daily bar chart
+        const ctx1 = document.getElementById('dailyChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: data.daily_activity.map(d => d.date.slice(5)),
+                datasets: [{
+                    label: 'Interactions',
+                    data: data.daily_activity.map(d => d.count),
+                    backgroundColor: 'rgba(99,102,241,0.5)',
+                    borderColor: '#6366f1',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: '#94a3b8' } } },
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                }
+            }
+        });
+
+        // Donut chart
+        const ctx2 = document.getElementById('typeChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Gestures', 'Voice', 'Facial', 'System'],
+                datasets: [{
+                    data: [stats.gestures, stats.voice, stats.facial, stats.system],
+                    backgroundColor: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b'],
+                    borderWidth: 0, hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '65%',
+                plugins: { legend: { labels: { color: '#94a3b8' }, position: 'bottom' } }
+            }
+        });
+    }
+
+    // ── Module controls ──────────────────────────────────────────
+    async function startModule(mod) {
+        await fetch(`/api/${mod === 'mouse' ? 'mouse' : mod}/start`, { method: 'POST' });
+        updatePill(mod, true);
+        if (!cameraActive) activateCamera();
+    }
+    async function stopModule(mod) {
+        await fetch(`/api/${mod === 'mouse' ? 'mouse' : mod}/stop`, { method: 'POST' });
+        updatePill(mod, false);
+    }
+    function updatePill(mod, active) {
+        const pill = document.getElementById(`${mod}-pill`);
+        const box = document.getElementById(`${mod}-box`);
+        if (pill) {
+            pill.className = active ? 'status-pill status-active' : 'status-pill status-inactive';
+            pill.innerHTML = `<span class="dot"></span> ${active ? 'Active' : 'Inactive'}`;
+        }
+        if (box) box.className = active ? 'detection-box active' : 'detection-box';
+    }
+
+    // ── Camera ───────────────────────────────────────────────────
+    function toggleCamera() {
+        if (!cameraActive) activateCamera(); else deactivateCamera();
+    }
+    function activateCamera() {
+        cameraActive = true;
+        const feed = document.getElementById('cam-feed');
+        const overlay = document.getElementById('cam-overlay');
+        const badge = document.getElementById('cam-badge');
+        const btn = document.getElementById('cam-toggle-btn');
+        const mode = document.getElementById('cam-mode').value;
+        feed.src = `/video_feed/${mode}`;
+        feed.style.display = 'block';
+        overlay.style.display = 'none';
+        badge.style.display = 'flex';
+        btn.textContent = '⛔ Deactivate Camera';
+        btn.className = 'btn btn-danger btn-sm';
+    }
+    function deactivateCamera() {
+        cameraActive = false;
+        const feed = document.getElementById('cam-feed');
+        const overlay = document.getElementById('cam-overlay');
+        const badge = document.getElementById('cam-badge');
+        const btn = document.getElementById('cam-toggle-btn');
+        feed.src = ''; feed.style.display = 'none';
+        overlay.style.display = 'flex';
+        badge.style.display = 'none';
+        btn.textContent = '📷 Activate Camera';
+        btn.className = 'btn btn-primary btn-sm';
+    }
+    function changeCamMode(mode) {
+        if (cameraActive) {
+            document.getElementById('cam-feed').src = `/video_feed/${mode}`;
+        }
+    }
+
+    // ── Screenshot ───────────────────────────────────────────────
+    async function takeScreenshot() {
+        const res = await fetch('/api/app/screenshot', { method: 'POST' });
+        const data = await res.json();
+        alert(data.status === 'success' ? '✅ ' + data.message : '❌ ' + data.message);
+    }
+
+    // ── Live status polling ──────────────────────────────────────
+    function pollStatus() {
+        socket.emit('request_status');
+    }
+    socket.on('system_status', data => {
+        if (data.gesture) {
+            updatePill('gesture', data.gesture.active);
+            const v = document.getElementById('dash-gesture-val');
+            if (v) v.textContent = data.gesture.gesture || '—';
+        }
+        if (data.facial) {
+            updatePill('facial', data.facial.active);
+            const v = document.getElementById('dash-facial-val');
+            if (v) v.textContent = data.facial.expression || '—';
+        }
+        if (data.voice) {
+            updatePill('voice', data.voice.active);
+            const v = document.getElementById('dash-voice-val');
+            if (v) v.textContent = data.voice.last_command || '—';
+        }
+        if (data.mouse) {
+            updatePill('mouse', data.mouse.active);
+            const v = document.getElementById('dash-mouse-val');
+            if (v) v.textContent = data.mouse.active ? 'Enabled' : 'Disabled';
+        }
+    });
+
+    async function refreshActivity() {
+        location.reload();
+    }
+
+    loadCharts();
+    setInterval(pollStatus, 3000);
+    pollStatus();
+</script>
+{% endblock %}

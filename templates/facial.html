@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Facial Expression Detection{% endblock %}
+{% block page_icon %}😊{% endblock %}
+{% block page_title %}Facial Expression Detection{% endblock %}
+
+{% block content %}
+<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);
+            border-radius:10px;padding:12px 18px;margin-bottom:20px;font-size:0.85rem;color:#fcd34d;">
+    ⚠️ <strong>Notice:</strong> This module detects facial expressions only.
+    It does <strong>not</strong> claim to reveal a person's actual emotional state.
+    Results are indicators based on facial muscle patterns.
+</div>
+
+<div class="grid grid-1-2 mb-20">
+    <!-- Controls -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card fade-in">
+            <div class="card-title mb-16">🎛️ Controls</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button class="btn btn-success" id="start-btn" onclick="startFacial()">▶ Start Detection</button>
+                <button class="btn btn-danger" id="stop-btn" onclick="stopFacial()" disabled>⏹ Stop Detection</button>
+                <button class="btn btn-outline" onclick="resetFacial()">↺ Reset</button>
+            </div>
+            <div class="separator"></div>
+            <div class="flex items-center justify-between">
+                <span class="text-sm">Module Status</span>
+                <div class="status-pill status-inactive" id="facial-status-pill">
+                    <span class="dot"></span> Inactive
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Expression -->
+        <div class="card fade-in">
+            <div class="card-title mb-12">🔍 Detected Expression</div>
+            <div class="detection-box active" id="expr-box">
+                <div class="detection-label">Expression</div>
+                <div class="detection-value" id="current-expr" style="font-size:1.8rem;">—</div>
+                <div class="detection-sub" id="expr-confidence">Confidence: —</div>
+            </div>
+            <div style="margin-top:12px;text-align:center;">
+                <span id="expr-emoji" style="font-size:3rem;">😐</span>
+            </div>
+        </div>
+
+        <!-- Confidence Bars -->
+        <div class="card fade-in">
+            <div class="card-title mb-12">📊 Expression Levels</div>
+            <div class="expression-bars" id="expr-bars">
+                {% for expr, color in [('Happy','#10b981'),('Sad','#6366f1'),('Angry','#ef4444'),
+                ('Surprise','#06b6d4'),('Neutral','#94a3b8'),
+                ('Fear','#8b5cf6'),('Disgust','#f59e0b')] %}
+                <div class="expression-bar-row">
+                    <span class="expression-bar-label">{{ expr }}</span>
+                    <div class="expression-bar-track">
+                        <div class="expression-bar-fill" id="bar-{{ expr|lower }}"
+                            style="width:0%;background:{{ color }};"></div>
+                    </div>
+                    <span class="expression-bar-pct" id="pct-{{ expr|lower }}">0%</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card fade-in">
+            <div class="card-title mb-12">📷 Live Camera Feed</div>
+            <div class="camera-container">
+                <img id="facial-feed" style="display:none" alt="Facial Camera" />
+                <div class="camera-overlay" id="cam-overlay">
+                    <div class="cam-icon">😊</div>
+                    <p>Click "Start Detection" to activate</p>
+                </div>
+                <div class="camera-badge" id="cam-badge" style="display:none">
+                    <span class="live-dot"></span> LIVE — FACIAL
+                </div>
+            </div>
+        </div>
+
+        <!-- Expressions Reference -->
+        <div class="card fade-in">
+            <div class="card-title mb-12">📚 Expression Reference</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+                {% for emoji, label in [('😄','Happy'),('😢','Sad'),('😠','Angry'),
+                ('😲','Surprised'),('😐','Neutral'),('😱','Fearful'),
+                ('🤢','Disgusted'),('😕','Unknown')] %}
+                <div style="text-align:center;padding:12px 6px;
+                    background:rgba(255,255,255,0.03);border:1px solid var(--border);
+                    border-radius:10px;" id="eref-{{ label|lower }}">
+                    <div style="font-size:1.8rem;">{{ emoji }}</div>
+                    <div class="text-xs text-muted" style="margin-top:4px;">{{ label }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- History -->
+<div class="card fade-in">
+    <div class="card-header">
+        <div class="card-title">📜 Expression History</div>
+        <button class="btn btn-outline btn-sm" onclick="clearHistory()">🗑 Clear</button>
+    </div>
+    <div class="activity-feed" id="expr-history">
+        <p class="text-secondary text-sm text-center" style="padding:20px;">
+            Expression history will appear here.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const EMOJIS = {
+        happy: '😄', sad: '😢', angry: '😠', surprise: '😲',
+        neutral: '😐', fear: '😱', disgust: '🤢'
+    };
+    const BARS = ['happy', 'sad', 'angry', 'surprise', 'neutral', 'fear', 'disgust'];
+    let pollInterval;
+
+    function startFacial() {
+        fetch('/api/facial/start', { method: 'POST' }).then(() => {
+            document.getElementById('facial-feed').src = '/video_feed/facial';
+            document.getElementById('facial-feed').style.display = 'block';
+            document.getElementById('cam-overlay').style.display = 'none';
+            document.getElementById('cam-badge').style.display = 'flex';
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('stop-btn').disabled = false;
+            document.getElementById('facial-status-pill').className = 'status-pill status-active';
+            document.getElementById('facial-status-pill').innerHTML = '<span class="dot"></span> Active';
+            pollInterval = setInterval(pollFacialStatus, 1000);
+        });
+    }
+
+    function stopFacial() {
+        fetch('/api/facial/stop', { method: 'POST' }).then(() => {
+            document.getElementById('facial-feed').style.display = 'none';
+            document.getElementById('cam-overlay').style.display = 'flex';
+            document.getElementById('cam-badge').style.display = 'none';
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = true;
+            document.getElementById('facial-status-pill').className = 'status-pill status-inactive';
+            document.getElementById('facial-status-pill').innerHTML = '<span class="dot"></span> Inactive';
+            if (pollInterval) clearInterval(pollInterval);
+        });
+    }
+
+    function resetFacial() {
+        stopFacial();
+        document.getElementById('current-expr').textContent = '—';
+        document.getElementById('expr-confidence').textContent = 'Confidence: —';
+        document.getElementById('expr-emoji').textContent = '😐';
+        BARS.forEach(b => {
+            document.getElementById('bar-' + b).style.width = '0%';
+            document.getElementById('pct-' + b).textContent = '0%';
+        });
+        document.getElementById('expr-history').innerHTML =
+            '<p class="text-secondary text-sm text-center" style="padding:20px;">History cleared.</p>';
+    }
+
+    async function pollFacialStatus() {
+        const res = await fetch('/api/facial/status');
+        const data = await res.json();
+
+        const expr = (data.expression || '').toLowerCase();
+        const conf = data.confidence || 0;
+
+        document.getElementById('current-expr').textContent =
+            data.expression ? capitalise(data.expression) : '—';
+        document.getElementById('expr-confidence').textContent = `Confidence: ${conf.toFixed ? conf.toFixed(1) : conf}%`;
+        document.getElementById('expr-emoji').textContent = EMOJIS[expr] || '😐';
+
+        // Show real confidence for dominant expression; 0 for others
+        BARS.forEach(b => {
+            let w = (b === expr) ? Math.min(conf, 100) : 0;
+            document.getElementById('bar-' + b).style.width = w + '%';
+            document.getElementById('pct-' + b).textContent = w > 0 ? Math.round(w) + '%' : '—';
+        });
+
+        // History
+        if (data.history && data.history.length) renderHistory(data.history);
+
+        // Log
+        if (expr && expr !== 'none' && expr !== 'no face detected') {
+            fetch('/api/facial/log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ expression: expr, confidence: conf })
+            });
+        }
+    }
+
+    function renderHistory(history) {
+        const feed = document.getElementById('expr-history');
+        feed.innerHTML = [...history].reverse().map(h => `
+    <div class="activity-item">
+      <div class="activity-icon facial">😊</div>
+      <div class="activity-info">
+        <div class="activity-name">${h.expression}</div>
+        <div class="activity-detail">Confidence: ${h.confidence}%</div>
+      </div>
+      <div class="activity-time">${h.timestamp}</div>
+    </div>`).join('');
+    }
+
+    function clearHistory() {
+        document.getElementById('expr-history').innerHTML =
+            '<p class="text-secondary text-sm text-center" style="padding:20px;">History cleared.</p>';
+    }
+    function capitalise(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+</script>
+{% endblock %}

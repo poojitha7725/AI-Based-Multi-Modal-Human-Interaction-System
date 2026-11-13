@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+{% block title %}How to Use{% endblock %}
+{% block page_icon %}📖{% endblock %}
+{% block page_title %}How to Use — Beginner's Guide{% endblock %}
+
+{% block content %}
+<style>
+    .guide-section {
+        margin-bottom: 28px;
+    }
+
+    .guide-step {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+
+    .step-num {
+        min-width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    .step-body {
+        flex: 1;
+    }
+
+    .step-title {
+        font-weight: 600;
+        margin-bottom: 4px;
+        font-size: 0.95rem;
+    }
+
+    .step-desc {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    .tip-box {
+        background: rgba(16, 185, 129, 0.08);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 0.85rem;
+        color: #6ee7b7;
+        margin-top: 8px;
+    }
+
+    .warn-box {
+        background: rgba(245, 158, 11, 0.08);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 0.85rem;
+        color: #fcd34d;
+        margin-top: 8px;
+    }
+
+    .cmd-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .cmd-chip {
+        background: rgba(99, 102, 241, 0.15);
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        border-radius: 20px;
+        padding: 4px 14px;
+        font-size: 0.8rem;
+        color: #a5b4fc;
+    }
+</style>
+
+<div class="card fade-in mb-20"
+    style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(6,182,212,0.08));border-color:rgba(99,102,241,0.3);">
+    <div style="display:flex;align-items:center;gap:16px;">
+        <div style="font-size:3rem;">📖</div>
+        <div>
+            <div style="font-size:1.3rem;font-weight:700;margin-bottom:6px;">Welcome! This is your complete beginner's
+                guide.</div>
+            <div class="text-secondary text-sm">Follow these steps one by one. You do not need any coding knowledge.
+                Just read and click!</div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION 1: Getting Started -->
+<div class="card fade-in guide-section">
+    <div class="card-title mb-16">🚀 Step 1 — Getting Started</div>
+    <div class="guide-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <div class="step-title">Open the web app</div>
+            <div class="step-desc">After starting the Flask server, open your browser and go to
+                <strong>http://127.0.0.1:5000</strong>. You will see a login page.</div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <div class="step-title">Register or Login</div>
+            <div class="step-desc">If you are new, click "Register" and fill in your name, email, and password. Then log
+                in. You will be taken to the Dashboard.</div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <div class="step-title">Check System Status</div>
+            <div class="step-desc">Click <strong>"System Check"</strong> in the left sidebar to see if your camera,
+                microphone, and all Python libraries are working correctly before using any features.</div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION 2: Dashboard -->
+<div class="card fade-in guide-section">
+    <div class="card-title mb-16">📊 Step 2 — Using the Dashboard</div>
+    <div class="guide-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <div class="step-title">Module Status Cards</div>
+            <div class="step-desc">The dashboard shows 4 cards: <strong>Gesture Module, Voice Module, Facial Module,
+                    Virtual Mouse</strong>. Each card has a Start and Stop button. Click Start to activate a module.
+            </div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <div class="step-title">Live Camera Feed</div>
+            <div class="step-desc">Click the <strong>"Activate Camera"</strong> button on the dashboard to see the live
+                camera feed. You can switch between Gesture / Facial / Virtual Mouse modes using the dropdown.</div>
+        </div>
+    </div>
+    <div class="tip-box">💡 Tip: Start just one module at a time when you are learning. Do not start all modules
+        together — it may slow down your computer.</div>
+</div>
+
+<!-- SECTION 3: Voice Assistant -->
+<div class="card fade-in guide-section">
+    <div class="card-title mb-16">🎤 Step 3 — Using the Voice Assistant</div>
+    <div class="guide-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <div class="step-title">Go to Voice Assistant page</div>
+            <div class="step-desc">Click <strong>"Voice Assistant"</strong> in the left sidebar.</div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <div class="step-title">Start the Assistant</div>
+            <div class="step-desc">Click the green <strong>"▶ Start Assistant"</strong> button. The status will change
+                to "Active".</div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <div class="step-title">Click the Microphone button</div>
+            <div class="step-desc">Click the 🎤 microphone button. It will turn 🔴 red and show "Listening... speak
+                now". Now speak your command clearly.</div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+            <div class="step-title">Supported Voice Commands</div>
+            <div class="step-desc">Speak one of these commands clearly and slowly:</div>
+            <div class="cmd-list">
+                <span class="cmd-chip">"open youtube"</span>
+                <span class="cmd-chip">"open google"</span>
+                <span class="cmd-chip">"open calculator"</span>
+                <span class="cmd-chip">"open notepad"</span>
+                <span class="cmd-chip">"play music"</span>
+                <span class="cmd-chip">"pause music"</span>
+                <span class="cmd-chip">"scroll up"</span>
+                <span class="cmd-chip">"scroll down"</span>
+                <span class="cmd-chip">"take screenshot"</span>
+                <span class="cmd-chip">"stop assistant"</span>
+            </div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+            <div class="step-title">Test Without Microphone</div>
+            <div class="step-desc">If your microphone is not working, use the <strong>"Test a Command Manually"</strong>
+                text box. Type any command (e.g. "open youtube") and click Send. This will execute the command.</div>
+        </div>
+    </div>
+    <div class="warn-box">⚠️ If microphone does not work: The system uses sounddevice (already installed). Make sure
+        your microphone is plugged in and not muted in Windows Sound Settings. You also need an internet connection for
+        Google Speech recognition.</div>
+</div>
+
+<!-- SECTION 4: Hand Gestures -->
+<div class="card fade-in guide-section">
+    <div class="card-title mb-16">🖐️ Step 4 — Using Hand Gesture Recognition</div>
+    <div class="guide-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <div class="step-title">Go to Hand Gestures page</div>
+            <div class="step-desc">Click <strong>"Hand Gestures"</strong> in the sidebar.</div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <div class="step-title">Start Detection</div>
+            <div class="step-desc">Click <strong>"▶ Start Detection"</strong>. Your webcam will turn on and show a live
+                feed with green skeleton drawn on your hand.</div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <div class="step-title">Perform Gestures</div>
+            <div class="step-desc">Hold your hand clearly in front of the camera. Try these gestures:</div>
+            <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                {% for emoji, name, action in [('🖐️','Open Palm','Pause interaction'),('✊','Closed Fist','Stop
+                interaction'),('👍','Thumbs Up','Confirm action'),('✌️','Victory Sign','Take screenshot'),('☝️','One
+                Finger Up','Move cursor mode'),('✌️','Two Fingers','Scroll mode')] %}
+                <div
+                    style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:10px;">
+                    <div style="font-size:1.5rem;">{{ emoji }}</div>
+                    <div style="font-weight:600;font-size:0.85rem;">{{ name }}</div>
+                    <div style="font-size:0.78rem;color:var(--text-secondary);">→ {{ action }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="tip-box">💡 Tip: Keep your hand 30–60 cm from the camera. Make sure there is good lighting. Keep fingers
+        clearly separated for best recognition.</div>
+</div>
+
+<!-- SECTION 5: Facial Expression -->
+<div class="card fade-in guide-section">
+    <div class="card-title mb-16">😊 Step 5 — Using Facial Expression Detection</div>
+    <div class="guide-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <div class="step-title">Go to Facial Expression page</div>
+            <div class="step-desc">Click <strong>"Facial Expression"</strong> in the sidebar.</div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <div class="step-title">Start Detection</div>
+            <div class="step-desc">Click <strong>"▶ Start Detection"</strong>. Your webcam will start and the AI will
+                try to detect a face.</div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <div class="step-title">Make facial expressions</div>
+            <div class="step-desc">Sit in front of the camera with good lighting. Make expressions like smiling 😄,
+                frowning 😠, or showing surprise 😲. The detected expression and confidence percentage will appear on
+                screen.</div>
+        </div>
+    </div>
+    <div class="tip-box">💡 Tip: The system uses DeepFace AI (if installed) for accurate detection. If DeepFace is not
+        available, it uses OpenCV rules as a fallback. Results may be less accurate with OpenCV fallback.</div>
+</div>
+
+<!-- SECTION 6: Virtual Mouse -->
+<div class="card fade-in guide-section">
+    <div class="card-title mb-16">🖱️ Step 6 — Using Virtual Mouse</div>
+    <div class="guide-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <div class="step-title">Go to Virtual Mouse page</div>
+            <div class="step-desc">Click <strong>"Virtual Mouse"</strong> in the sidebar.</div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <div class="step-title">Enable Virtual Mouse</div>
+            <div class="step-desc">Click <strong>"▶ Enable Virtual Mouse"</strong>. Your camera will turn on.</div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <div class="step-title">Control the Mouse with your hand</div>
+            <div class="step-desc">
+                <strong>Move cursor:</strong> Raise only your index finger ☝️ — move hand to move the cursor.<br>
+                <strong>Left click:</strong> Raise index + middle finger ✌️ and bring them close together.<br>
+                <strong>Right click:</strong> Raise index + ring finger (skip middle).<br>
+                <strong>Scroll:</strong> Raise index + pinky finger 🤙.
+            </div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+            <div class="step-title">Adjust Sensitivity</div>
+            <div class="step-desc">Use the <strong>Cursor Sensitivity</strong> slider on the left. Higher value = cursor
+                moves faster. Lower value = more precise control. Start at 1.5× (default).</div>
+        </div>
+    </div>
+    <div class="warn-box">⚠️ Important: The virtual mouse will actually move your real computer cursor. If the cursor
+        gets stuck, move your hand out of frame or click "⏹ Disable" button. Set PyAutoGUI FAILSAFE to False is already
+        done for you.</div>
+</div>
+
+<!-- SECTION 7: Stopping -->
+<div class="card fade-in guide-section">
+    <div class="card-title mb-16">⏹️ Step 7 — Stopping Features Safely</div>
+    <div class="guide-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <div class="step-title">Stop any module</div>
+            <div class="step-desc">Every page has a <strong>red "⏹ Stop"</strong> button. Click it to stop that module.
+                This will turn off the camera stream and stop detection for that module.</div>
+        </div>
+    </div>
+    <div class="guide-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <div class="step-title">Stop the whole server</div>
+            <div class="step-desc">Go to the terminal where you ran <code>python app.py</code> and press
+                <strong>Ctrl+C</strong>. This will stop the Flask server and close all camera connections safely.</div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION 8: Troubleshooting -->
+<div class="card fade-in guide-section">
+    <div class="card-title mb-16">🔧 Common Problems & Fixes</div>
+    {% for problem, fix in [
+    ('Camera not showing', 'Make sure no other app (Zoom, Teams, etc.) is using your camera. Close them and click Start
+    again.'),
+    ('Microphone not working', 'Check Windows Sound Settings → Recording devices. Make sure your microphone is set as
+    Default Device and not muted.'),
+    ('Gesture not recognized', 'Improve lighting. Keep background simple (plain wall). Hold hand 30-60cm from camera.
+    Make fingers clearly visible.'),
+    ('Voice command not executed', 'Check internet connection (needed for Google Speech API). Speak slowly and clearly.
+    Try the manual text input box to test commands.'),
+    ('Virtual mouse moving too fast', 'Lower the sensitivity slider. Start with 0.8x for precise control.'),
+    ('Page not loading', 'Make sure app.py is still running in the terminal. Refresh the browser. Check if port 5000 is
+    occupied.'),
+    ('Error 404', 'Make sure you are logged in. All pages require login. Go to http://127.0.0.1:5000/login'),
+    ] %}
+    <div class="guide-step">
+        <div class="step-num" style="background:rgba(245,158,11,0.7);">?</div>
+        <div class="step-body">
+            <div class="step-title">{{ problem }}</div>
+            <div class="step-desc">{{ fix }}</div>
+        </div>
+    </div>
+    {% endfor %}
+    <div style="margin-top:16px;text-align:center;">
+        <a href="{{ url_for('system_check') }}" class="btn btn-primary">🔍 Run System Check Now</a>
+    </div>
+</div>
+{% endblock %}

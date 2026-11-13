@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block title %}Voice Assistant{% endblock %}
+{% block page_icon %}🎤{% endblock %}
+{% block page_title %}Voice Command Assistant{% endblock %}
+
+{% block content %}
+<div class="grid grid-2 mb-20">
+    <!-- Mic Panel -->
+    <div class="card fade-in" style="text-align:center;">
+        <div class="card-title mb-20">🎤 Voice Input</div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:20px;">
+            <button class="mic-button" id="mic-btn" onclick="toggleMic()" title="Start/Stop Listening">
+                🎤
+            </button>
+            <div id="mic-status-text" class="text-secondary text-sm">Click mic to start listening</div>
+
+            <div class="waveform-wrap" id="waveform">
+                <div class="waveform">
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                </div>
+            </div>
+
+            <div class="detection-box" style="width:100%;" id="recognized-box">
+                <div class="detection-label">Recognized Text</div>
+                <div class="detection-value" id="recognized-text" style="font-size:1rem;word-break:break-word;">—</div>
+            </div>
+        </div>
+
+        <div class="separator"></div>
+        <!-- Manual test input -->
+        <div class="form-group" style="text-align:left;">
+            <label class="form-label">🧪 Test a Command Manually</label>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="manual-cmd" class="form-control" placeholder="e.g. open youtube" />
+                <button class="btn btn-primary" onclick="sendManualCommand()">Send</button>
+            </div>
+        </div>
+
+        <div class="separator"></div>
+        <div style="display:flex;gap:8px;justify-content:center;">
+            <button class="btn btn-success btn-sm" onclick="startVoice()">▶ Start Assistant</button>
+            <button class="btn btn-danger btn-sm" onclick="stopVoice()">⏹ Stop</button>
+        </div>
+
+        <div style="margin-top:12px;" id="voice-status-pill">
+            <span class="status-pill status-inactive"><span class="dot"></span> Inactive</span>
+        </div>
+    </div>
+
+    <!-- Command Result -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card fade-in">
+            <div class="card-title mb-12">✅ Last Command Result</div>
+            <div id="cmd-result-box" style="padding:16px;background:rgba(255,255,255,0.03);
+           border:1px solid var(--border);border-radius:10px;">
+                <p class="text-secondary text-sm">No command executed yet.</p>
+            </div>
+        </div>
+
+        <div class="card fade-in">
+            <div class="card-title mb-12">⚙️ Settings</div>
+            <div class="form-group">
+                <label class="form-label">Voice Language</label>
+                <select class="form-control" id="voice-lang">
+                    <option value="en-US" {% if settings.voice_language=='en-US' %}selected{% endif %}>English (US)
+                    </option>
+                    <option value="en-IN" {% if settings.voice_language=='en-IN' %}selected{% endif %}>English (India)
+                    </option>
+                    <option value="hi-IN" {% if settings.voice_language=='hi-IN' %}selected{% endif %}>Hindi</option>
+                    <option value="te-IN" {% if settings.voice_language=='te-IN' %}selected{% endif %}>Telugu</option>
+                </select>
+            </div>
+            <div class="toggle-switch">
+                <input type="checkbox" id="voice-feedback-toggle" {% if settings.voice_feedback %}checked{% endif %} />
+                <label class="toggle-track" for="voice-feedback-toggle"></label>
+                <span class="text-sm">Voice Feedback (TTS)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Supported Commands -->
+<div class="card fade-in mb-20">
+    <div class="card-title mb-16">📋 Supported Commands</div>
+    <div class="grid grid-3">
+        {% set cmds = [
+        ('open youtube','Opens YouTube in browser','🌐'),
+        ('open google','Opens Google in browser','🔍'),
+        ('open calculator','Opens system calculator','🔢'),
+        ('open notepad','Opens Notepad','📝'),
+        ('play music','Plays/resumes media','▶️'),
+        ('pause music','Pauses media playback','⏸️'),
+        ('increase volume','Increases system volume','🔊'),
+        ('decrease volume','Decreases system volume','🔉'),
+        ('scroll up','Scrolls page up','⬆️'),
+        ('scroll down','Scrolls page down','⬇️'),
+        ('take screenshot','Captures screenshot','📸'),
+        ('stop assistant','Stops voice assistant','🛑')
+        ] %}
+        {% for phrase, desc, icon in cmds %}
+        <div class="command-item fade-in" onclick="sendManualCommand2('{{ phrase }}')" style="cursor:pointer;"
+            title="Click to test">
+            <div>
+                <div class="command-phrase">{{ icon }} "{{ phrase }}"</div>
+                <div class="command-action">{{ desc }}</div>
+            </div>
+            <span class="badge badge-primary">Try</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Command History -->
+<div class="card fade-in">
+    <div class="card-header">
+        <div class="card-title">📜 Command History</div>
+        <button class="btn btn-outline btn-sm" onclick="clearCmdHistory()">🗑 Clear</button>
+    </div>
+    <div class="activity-feed" id="voice-history">
+        <p class="text-secondary text-sm text-center" style="padding:20px;">
+            Command history will appear here.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let voiceActive = false;
+    let micListening = false;
+
+    async function startVoice() {
+        const res = await fetch('/api/voice/start', { method: 'POST' });
+        voiceActive = true;
+        document.getElementById('voice-status-pill').innerHTML =
+            '<span class="status-pill status-active"><span class="dot"></span> Active</span>';
+    }
+
+    async function stopVoice() {
+        await fetch('/api/voice/stop', { method: 'POST' });
+        voiceActive = false;
+        micListening = false;
+        document.getElementById('mic-btn').classList.remove('listening');
+        document.getElementById('mic-btn').textContent = '🎤';
+        document.getElementById('mic-status-text').textContent = 'Click mic to start listening';
+        document.getElementById('waveform').classList.remove('active');
+        document.getElementById('voice-status-pill').innerHTML =
+            '<span class="status-pill status-inactive"><span class="dot"></span> Inactive</span>';
+    }
+
+    async function toggleMic() {
+        if (!voiceActive) { await startVoice(); }
+        micListening = !micListening;
+        const btn = document.getElementById('mic-btn');
+        const wf = document.getElementById('waveform');
+        const txt = document.getElementById('mic-status-text');
+        if (micListening) {
+            btn.classList.add('listening'); btn.textContent = '🔴';
+            wf.classList.add('active');
+            txt.textContent = '🎤 Listening... speak now';
+        } else {
+            btn.classList.remove('listening'); btn.textContent = '🎤';
+            wf.classList.remove('active');
+            txt.textContent = 'Microphone paused';
+        }
+    }
+
+    async function sendManualCommand() {
+        const cmd = document.getElementById('manual-cmd').value.trim();
+        if (!cmd) return;
+        const res = await fetch('/api/voice/command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: cmd })
+        });
+        const data = await res.json();
+        document.getElementById('recognized-text').textContent = cmd;
+        showResult(data);
+        document.getElementById('manual-cmd').value = '';
+        refreshHistory();
+    }
+
+    function sendManualCommand2(phrase) {
+        document.getElementById('manual-cmd').value = phrase;
+        sendManualCommand();
+    }
+
+    function showResult(data) {
+        const box = document.getElementById('cmd-result-box');
+        if (data.status === 'executed') {
+            box.innerHTML = `
+      <div class="flex items-center gap-8 mb-8">
+        <span class="badge badge-success">✅ Executed</span>
+        <span class="badge badge-primary">${data.type || ''}</span>
+      </div>
+      <div class="text-sm"><strong>Heard:</strong> ${data.command}</div>
+      <div class="text-sm"><strong>Matched:</strong> ${data.matched || '—'}</div>
+      <div class="text-sm text-muted"><strong>Action:</strong> ${data.action || '—'}</div>`;
+        } else if (data.status === 'unknown') {
+            box.innerHTML = `
+      <div class="flex items-center gap-8 mb-8">
+        <span class="badge badge-warning">⚠️ Unknown</span>
+      </div>
+      <div class="text-sm">Command "<strong>${data.command}</strong>" was not recognized.</div>
+      <div class="text-muted text-xs">Try one of the supported commands listed below.</div>`;
+        } else {
+            box.innerHTML = '<p class="text-muted text-sm">No input received.</p>';
+        }
+    }
+
+    async function refreshHistory() {
+        const res = await fetch('/api/voice/status');
+        const data = await res.json();
+        const feed = document.getElementById('voice-history');
+        if (!data.history || data.history.length === 0) {
+            feed.innerHTML = '<p class="text-secondary text-sm text-center" style="padding:20px;">No history yet.</p>';
+            return;
+        }
+        feed.innerHTML = [...data.history].reverse().map(h => `
+    <div class="activity-item">
+      <div class="activity-icon voice">🎤</div>
+      <div class="activity-info">
+        <div class="activity-name">${h.matched || h.command}</div>
+        <div class="activity-detail">${h.command}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <span class="badge badge-${h.status === 'executed' ? 'success' : 'warning'}">${h.status}</span>
+        <span class="activity-time">${h.timestamp}</span>
+      </div>
+    </div>`).join('');
+    }
+
+    function clearCmdHistory() {
+        document.getElementById('voice-history').innerHTML =
+            '<p class="text-secondary text-sm text-center" style="padding:20px;">History cleared.</p>';
+    }
+
+    // SocketIO live command update
+    socket.on('voice_command', data => {
+        if (data.command) {
+            document.getElementById('recognized-text').textContent = data.command;
+            showResult(data);
+            refreshHistory();
+        }
+    });
+
+    setInterval(refreshHistory, 5000);
+</script>
+{% endblock %}

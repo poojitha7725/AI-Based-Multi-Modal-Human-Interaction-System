@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% block title %}Virtual Mouse{% endblock %}
+{% block page_icon %}🖱️{% endblock %}
+{% block page_title %}Virtual Mouse Control{% endblock %}
+
+{% block content %}
+<div class="grid grid-1-2 mb-20">
+    <!-- Left column: controls + live stats -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <!-- Controls -->
+        <div class="card fade-in">
+            <div class="card-title mb-16">🎛️ Controls</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button class="btn btn-success" id="start-btn" onclick="startMouse()">▶ Enable Virtual Mouse</button>
+                <button class="btn btn-danger"  id="stop-btn"  onclick="stopMouse()" disabled>⏹ Disable</button>
+                <button class="btn btn-outline"                onclick="resetMouse()">↺ Reset</button>
+            </div>
+            <div class="separator"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <span class="text-sm">Module Status</span>
+                <div class="status-pill status-inactive" id="mouse-status-pill">
+                    <span class="dot"></span> Inactive
+                </div>
+            </div>
+            <label class="form-label">🎯 Cursor Sensitivity</label>
+            <input type="range" min="0.5" max="3.0" step="0.1" value="1.5" id="sensitivity-slider"
+                   oninput="updateSens(this.value)" style="margin-top:6px;" />
+            <div style="display:flex;justify-content:space-between;margin-top:4px;">
+                <span class="text-xs text-muted">Slow (0.5)</span>
+                <span class="badge badge-primary" id="sens-val">1.5×</span>
+                <span class="text-xs text-muted">Fast (3.0)</span>
+            </div>
+        </div>
+
+        <!-- Live State -->
+        <div class="card fade-in">
+            <div class="card-title mb-12">📍 Live State</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+
+                <!-- Active Mode -->
+                <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);
+                            border-radius:10px;padding:12px;text-align:center;">
+                    <div style="font-size:1rem;font-weight:700;color:#818cf8;" id="mouse-mode">—</div>
+                    <div class="text-xs text-muted">Active Mode</div>
+                </div>
+
+                <!-- FPS -->
+                <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);
+                            border-radius:10px;padding:12px;text-align:center;">
+                    <div style="font-size:1rem;font-weight:700;color:#34d399;" id="mouse-fps">0</div>
+                    <div class="text-xs text-muted">FPS</div>
+                </div>
+
+                <!-- Pinch Status -->
+                <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);
+                            border-radius:10px;padding:12px;text-align:center;" id="mouse-pinch-box">
+                    <div style="font-size:1rem;font-weight:700;color:#fbbf24;" id="mouse-pinch">off</div>
+                    <div class="text-xs text-muted">Pinch / Click</div>
+                </div>
+
+                <!-- Hand count -->
+                <div style="background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);
+                            border-radius:10px;padding:12px;text-align:center;">
+                    <div style="font-size:1rem;font-weight:700;color:#22d3ee;" id="mouse-hands">0</div>
+                    <div class="text-xs text-muted">Hands in Frame</div>
+                </div>
+            </div>
+
+            <!-- Last Action -->
+            <div class="detection-box" style="margin-bottom:10px;">
+                <div class="detection-label">Last Action</div>
+                <div class="detection-value" id="mouse-action" style="font-size:1rem;">—</div>
+            </div>
+
+            <!-- Cursor Position -->
+            <div class="detection-box">
+                <div class="detection-label">Cursor Position</div>
+                <div class="detection-value" id="mouse-pos" style="font-size:1rem;">—</div>
+            </div>
+        </div>
+
+        <!-- Gesture Legend -->
+        <div class="card fade-in">
+            <div class="card-title mb-12">📖 Gesture → Action</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                {% for gesture, action, emoji in [
+                ('Thumb + Index Pinch', 'Left Click / Drag', '🤏'),
+                ('Index Only',          'Move Cursor',       '☝️'),
+                ('Index + Middle',      'Left Click',        '✌️'),
+                ('Index + Ring',        'Right Click',       '🤞'),
+                ('Index + Pinky',       'Scroll',            '🤙'),
+                ('Closed Fist',         'Stop / Rest',       '✊'),
+                ] %}
+                <div class="command-item">
+                    <div>
+                        <div class="command-phrase">{{ emoji }} {{ gesture }}</div>
+                        <div class="command-action">{{ action }}</div>
+                    </div>
+                    <span class="badge badge-info">Gesture</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column: camera + virtual cursor tracker -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card fade-in">
+            <div class="card-title mb-12">📷 Live Camera Feed — Blue Skeleton + Mouse Control</div>
+            <div class="camera-container">
+                <img id="mouse-feed" style="display:none" alt="Mouse Camera" />
+                <div class="camera-overlay" id="cam-overlay">
+                    <div class="cam-icon">🖱️</div>
+                    <p>Click "Enable Virtual Mouse" to activate</p>
+                    <p class="text-xs text-muted" style="margin-top:8px;">
+                        Up to 4 hands detected · Primary hand controls cursor
+                    </p>
+                </div>
+                <div class="camera-badge" id="cam-badge" style="display:none">
+                    <span class="live-dot"></span> LIVE — VIRTUAL MOUSE
+                </div>
+            </div>
+            <div style="margin-top:14px;padding:14px;background:rgba(99,102,241,0.06);
+                    border:1px solid var(--border);border-radius:10px;">
+                <p class="text-xs text-muted">
+                    🤏 <strong>PINCH</strong> (thumb + index) → Click &amp; Drag &nbsp;|&nbsp;
+                    ☝️ <strong>Index Only</strong> → Move cursor &nbsp;|&nbsp;
+                    ✌️ <strong>Index + Middle</strong> → Click
+                </p>
+            </div>
+        </div>
+
+        <!-- Virtual Cursor Tracker -->
+        <div class="card fade-in">
+            <div class="card-title mb-16">🖱️ Virtual Cursor Tracker</div>
+            <div id="cursor-canvas-wrap" style="position:relative;height:220px;
+               background:rgba(255,255,255,0.02);border:1px solid var(--border);
+               border-radius:10px;overflow:hidden;">
+                <!-- Grid lines -->
+                <svg style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.1;">
+                    <line x1="33%" y1="0" x2="33%" y2="100%" stroke="#6366f1" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="66%" y1="0" x2="66%" y2="100%" stroke="#6366f1" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="0" y1="33%" x2="100%" y2="33%" stroke="#6366f1" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="0" y1="66%" x2="100%" y2="66%" stroke="#6366f1" stroke-width="1" stroke-dasharray="4"/>
+                </svg>
+                <!-- Virtual cursor dot -->
+                <div id="virtual-cursor"
+                     style="position:absolute;width:16px;height:16px;
+                            background:var(--accent);border-radius:50%;
+                            transform:translate(-50%,-50%);
+                            transition:left 0.08s linear,top 0.08s linear;
+                            left:50%;top:50%;
+                            box-shadow:0 0 14px rgba(99,102,241,0.7);">
+                </div>
+                <!-- Pinch ring -->
+                <div id="virtual-pinch-ring"
+                     style="position:absolute;width:28px;height:28px;
+                            border:2px solid #f59e0b;border-radius:50%;
+                            transform:translate(-50%,-50%);
+                            transition:left 0.08s,top 0.08s;
+                            left:50%;top:50%;opacity:0;">
+                </div>
+                <p style="position:absolute;bottom:10px;width:100%;text-align:center;"
+                   class="text-xs text-muted">Virtual cursor tracker (proportional to screen)</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let pollInterval;
+    let mouseActive = false;
+
+    function startMouse() {
+        fetch('/api/mouse/start', { method: 'POST' }).then(() => {
+            mouseActive = true;
+            document.getElementById('mouse-feed').src = '/video_feed/mouse';
+            document.getElementById('mouse-feed').style.display = 'block';
+            document.getElementById('cam-overlay').style.display = 'none';
+            document.getElementById('cam-badge').style.display = 'flex';
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('stop-btn').disabled = false;
+            setPill(true);
+            pollInterval = setInterval(pollMouseStatus, 400);
+        });
+    }
+
+    function stopMouse() {
+        fetch('/api/mouse/stop', { method: 'POST' }).then(() => {
+            mouseActive = false;
+            document.getElementById('mouse-feed').style.display = 'none';
+            document.getElementById('cam-overlay').style.display = 'flex';
+            document.getElementById('cam-badge').style.display = 'none';
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = true;
+            setPill(false);
+            if (pollInterval) clearInterval(pollInterval);
+            resetDisplay();
+        });
+    }
+
+    function resetMouse() { stopMouse(); }
+
+    function setPill(active) {
+        const pill = document.getElementById('mouse-status-pill');
+        pill.className = active ? 'status-pill status-active' : 'status-pill status-inactive';
+        pill.innerHTML = `<span class="dot"></span> ${active ? 'Active' : 'Inactive'}`;
+    }
+
+    function resetDisplay() {
+        ['mouse-mode','mouse-action','mouse-pos'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = '—';
+        });
+        document.getElementById('mouse-fps').textContent = '0';
+        document.getElementById('mouse-hands').textContent = '0';
+        document.getElementById('mouse-pinch').textContent = 'off';
+    }
+
+    function updateSens(val) {
+        document.getElementById('sens-val').textContent = parseFloat(val).toFixed(1) + '×';
+        fetch('/api/mouse/sensitivity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sensitivity: parseFloat(val) })
+        });
+    }
+
+    async function pollMouseStatus() {
+        // Use the system_status socket event (already polling via setInterval on socket)
+        socket.emit('request_status');
+    }
+
+    socket.on('system_status', data => {
+        if (!mouseActive) return;
+        if (!data.mouse) return;
+        const m = data.mouse;
+
+        // Mode
+        const modeEl = document.getElementById('mouse-mode');
+        if (modeEl) modeEl.textContent = m.mode || '—';
+
+        // Action
+        const actEl = document.getElementById('mouse-action');
+        if (actEl) actEl.textContent = m.action || '—';
+
+        // FPS
+        const fpsEl = document.getElementById('mouse-fps');
+        if (fpsEl) fpsEl.textContent = (m.fps || 0).toFixed(1);
+
+        // Hands
+        const handsEl = document.getElementById('mouse-hands');
+        if (handsEl) handsEl.textContent = m.hand_count || 0;
+
+        // Pinch
+        const pinchEl = document.getElementById('mouse-pinch');
+        const pinchBox = document.getElementById('mouse-pinch-box');
+        const pinchRing = document.getElementById('virtual-pinch-ring');
+        if (pinchEl) {
+            if (m.pinch) {
+                pinchEl.textContent = 'ACTIVE';
+                pinchEl.style.color = '#f59e0b';
+                if (pinchBox) pinchBox.style.background = 'rgba(245,158,11,0.3)';
+                if (pinchRing) pinchRing.style.opacity = '1';
+            } else {
+                pinchEl.textContent = 'off';
+                pinchEl.style.color = '#64748b';
+                if (pinchBox) pinchBox.style.background = 'rgba(245,158,11,0.1)';
+                if (pinchRing) pinchRing.style.opacity = '0';
+            }
+        }
+
+        // Position + virtual cursor
+        const pos = m.position;
+        if (pos) {
+            const posEl = document.getElementById('mouse-pos');
+            if (posEl) posEl.textContent = `(${pos[0]}, ${pos[1]})`;
+
+            const wrap = document.getElementById('cursor-canvas-wrap');
+            if (wrap) {
+                const cw = wrap.clientWidth;
+                const ch = wrap.clientHeight;
+                const sw = window.screen.width;
+                const sh = window.screen.height;
+                const cx = Math.round((pos[0] / sw) * cw);
+                const cy = Math.round((pos[1] / sh) * ch);
+
+                const cur = document.getElementById('virtual-cursor');
+                if (cur) { cur.style.left = cx + 'px'; cur.style.top = cy + 'px'; }
+
+                if (pinchRing) { pinchRing.style.left = cx + 'px'; pinchRing.style.top = cy + 'px'; }
+            }
+        }
+    });
+</script>
+{% endblock %}
